@@ -46,7 +46,6 @@ Oscil<COS8192_NUM_CELLS, AUDIO_RATE> aCos6b(COS8192_DATA);
 Oscil<COS8192_NUM_CELLS, AUDIO_RATE> aCos7b(COS8192_DATA);
 
 // base pitch frequencies in 24n8 fixed int format (for speed later)
-// I will need 24 of these, right?
 Q16n16 f1,f2,f3,f4,f5,f6,f7;
 
 
@@ -59,33 +58,6 @@ Q16n16 variation() {
 
 void setup(){
   startMozzi(64); // a literal control rate here
-
-  // select base frequencies using mtof (midi to freq) and fixed-point numbers
-  f1 = Q16n16_mtof(Q16n0_to_Q16n16(48));
-  f2 = Q16n16_mtof(Q16n0_to_Q16n16(74));
-  f3 = Q16n16_mtof(Q16n0_to_Q16n16(64));
-  f4 = Q16n16_mtof(Q16n0_to_Q16n16(77));
-  f5 = Q16n16_mtof(Q16n0_to_Q16n16(67));
-  f6 = Q16n16_mtof(Q16n0_to_Q16n16(57));
-  f7 = Q16n16_mtof(Q16n0_to_Q16n16(60));
-
-  // set Oscils with chosen frequencies
-  aCos1.setFreq_Q16n16(f1);
-  aCos2.setFreq_Q16n16(f2);
-  aCos3.setFreq_Q16n16(f3);
-  aCos4.setFreq_Q16n16(f4);
-  aCos5.setFreq_Q16n16(f5);
-  aCos6.setFreq_Q16n16(f6);
-  aCos7.setFreq_Q16n16(f7);
-
-  // set frequencies of duplicate oscillators
-  aCos1b.setFreq_Q16n16(f1+variation());
-  aCos2b.setFreq_Q16n16(f2+variation());
-  aCos3b.setFreq_Q16n16(f3+variation());
-  aCos4b.setFreq_Q16n16(f4+variation());
-  aCos5b.setFreq_Q16n16(f5+variation());
-  aCos6b.setFreq_Q16n16(f6+variation());
-  aCos7b.setFreq_Q16n16(f7+variation());
 }
 
 
@@ -95,40 +67,38 @@ void loop(){
 
 
 void updateControl(){
-  // todo: choose a nice scale or progression and make a table for it
-  // or add a very slow gliss for f1-f7, like shephard tones
-
-  // change frequencies of the b oscillators
-  switch (lowByte(xorshift96()) & 7){ // 7 is 0111
-
-    case 0:
-      aCos1b.setFreq_Q16n16(f1+variation());
-    break;
-
-    case 1:
-       aCos2b.setFreq_Q16n16(f2+variation());
-    break;
-
-    case 2:
-       aCos3b.setFreq_Q16n16(f3+variation());
-    break;
-
-    case 3:
-       aCos4b.setFreq_Q16n16(f4+variation());
-    break;
-
-    case 4:
-       aCos5b.setFreq_Q16n16(f5+variation());
-    break;
-
-    case 5:
-       aCos6b.setFreq_Q16n16(f6+variation());
-    break;
-
-    case 6:
-       aCos7b.setFreq_Q16n16(f7+variation());
-    break;
-  }
+  
+  // Gotta set inNote.  I may need a massive switch statement.
+  // and, for that matter, it might be faster to do this in hard-coded frequency
+  Q16n16 inNote;
+  inNote = 48; // for now
+  
+  // Make harmonics
+  f1 = Q16n16_mtof(Q16n0_to_Q16n16(inNote));
+  f2 = Q16n16_mtof(Q16n0_to_Q16n16(inNote + 12));
+  f3 = Q16n16_mtof(Q16n0_to_Q16n16(inNote + 19));
+  f4 = Q16n16_mtof(Q16n0_to_Q16n16(inNote + 24));
+  f5 = Q16n16_mtof(Q16n0_to_Q16n16(inNote + 28));
+  f6 = Q16n16_mtof(Q16n0_to_Q16n16(inNote + 31));
+  f7 = Q16n16_mtof(Q16n0_to_Q16n16(inNote + 36)); // ,maybe change to +34 to get the 7th?
+  
+  // Set the main oscillators
+  aCos1.setFreq_Q16n16(f1);
+  aCos2.setFreq_Q16n16(f2);
+  aCos3.setFreq_Q16n16(f3);
+  aCos4.setFreq_Q16n16(f4);
+  aCos5.setFreq_Q16n16(f5);
+  aCos6.setFreq_Q16n16(f6);
+  aCos7.setFreq_Q16n16(f7);
+  
+  // set frequencies of duplicate oscillators
+  aCos1b.setFreq_Q16n16(f1+variation());
+  aCos2b.setFreq_Q16n16(f2+variation());
+  aCos3b.setFreq_Q16n16(f3+variation());
+  aCos4b.setFreq_Q16n16(f4+variation());
+  aCos5b.setFreq_Q16n16(f5+variation());
+  aCos6b.setFreq_Q16n16(f6+variation());
+  aCos7b.setFreq_Q16n16(f7+variation());
 }
 
 
