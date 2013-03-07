@@ -84,7 +84,7 @@ int updateAudio(){
 
   int asig = 0;
   for (int i = 0; i < NUMBER_OSCS; i++) {
-    asig = asig + oscs[i]->next();
+    asig = asig + gains[i] * oscs[i]->next();
   }
 
   return asig >> 3;
