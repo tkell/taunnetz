@@ -1,6 +1,5 @@
 /*  
  *  Working on the synthesis part of my arduino Tonnetz
- 
  */
 
 #include <MozziGuts.h>
@@ -12,35 +11,44 @@
 #include <fixedMath.h> // for Q16n16 fixed-point fractional number type
 
 #define CONTROL_RATE 128
-#define NUMBER_OSCS 48
-#define ATTACK 150
-#define DECAY 500
+#define NUMBER_OSCS 4
 
 byte newButtons[NUMBER_OSCS];
 byte oldButtons[NUMBER_OSCS];
-Oscil<COS8192_NUM_CELLS, AUDIO_RATE>* oscs[NUMBER_OSCS]; // I doubt it
-Ead* envs[NUMBER_OSCS];
+Oscil<COS8192_NUM_CELLS, AUDIO_RATE> *oscs[NUMBER_OSCS];
+Ead *envs[NUMBER_OSCS];
 int gains[NUMBER_OSCS];
+unsigned int attack = 125;
+unsigned int decay = 250;
 
 void setup(){
   startMozzi(CONTROL_RATE); // a literal control rate here
+  Serial.begin(9600);
+  Serial.println("Hello World");
   
+ 
   for (int i = 0; i < NUMBER_OSCS; i++) {
     newButtons[i] = 0;
     oldButtons[i] = 0;
     
     Oscil<COS8192_NUM_CELLS, AUDIO_RATE> aCos(COS8192_DATA);
     // cue giant switch statement to give each osc a frequency
+    switch (i) {
+      case 0:
+        aCos.setFreq(float(660.0));
+        break;
+      default: 
+        aCos.setFreq(float(440.0));
+        break;
+    }
+    
+    Ead env = Ead(CONTROL_RATE);
     
     oscs[i] = &aCos;
-    
-    Ead env(CONTROL_RATE);
     envs[i] = &env;
     gains[i] = 0;
   }
-  
 }
-
 
 void loop(){
   audioHook();
@@ -48,44 +56,58 @@ void loop(){
 
 
 void updateControl(){
-  // Gotta set newButtons.
   // OK, so this is envisioning that I have 48 oscillators just lying around waiting for their gains to be updated.
-  // this means that I can set my oscillators up in setup, right?
   
-  // newButtons = getFromTouchMagic();
-  
+  //getFromTouchMagic(newButtons);
+  Serial.println("Top of updateControl");
+
+  // Dummy update function
+  for (int i = 0; i < NUMBER_OSCS; i++) {
+    if (i == 0) {
+      newButtons[i] = 1;
+    }
+    Serial.println(newButtons[i]);
+  }
+  Serial.println("Read all newButtons");
+
   // Do this very fast
+  // This breaks the first time I try to access the envelope. Fuckers.  
   for (int i = 0; i < NUMBER_OSCS; i++) {
     // If the note is not on, start it
     if (newButtons[i] == 1 && oldButtons[i] == 0) {
-      envs[i]->start(250,500);
-      gains[i] = envs[i]->next();
+      Serial.println("Turn on");
+      envs[i]->start(attack,decay);  // This line ends the world
+      //gains[i] = (int) envs[i]->next();
     }
     // If the note is still on, keep it on
     if (newButtons[i] == 1 && oldButtons[i] == 1) {
       if (gains[i] == 127){
-        continue;
+        Serial.println("Leave alone");
+        // continue;
       } else {
-        gains[i] = envs[i]->next();
+        Serial.println("Turn up");
+        //gains[i] = (int) envs[i]->next();
       }
     }
     // If the note was on, stop it
     if (newButtons[i] == 0 && oldButtons[i] == 1) {
-      gains[i] = envs[i]->next();
+      Serial.println("Turn off");
+      //gains[i] = (int) envs[i]->next();
     }
     
   oldButtons[i] = newButtons[i];
   }
   
+  Serial.println("End of updateControl");
 }
 
 
 int updateAudio(){
-
   int asig = 0;
   for (int i = 0; i < NUMBER_OSCS; i++) {
-    asig = asig + gains[i] * oscs[i]->next();
+    // asig = asig + gains[i] * oscs[i]->next(); // Trying with no gain function
+    asig = asig + oscs[i]->next();
   }
-
+  Serial.println(asig);
   return asig >> 3;
 }
