@@ -16,7 +16,15 @@
 byte newButtons[NUMBER_OSCS];
 byte oldButtons[NUMBER_OSCS];
 Oscil<COS8192_NUM_CELLS, AUDIO_RATE> *oscs[NUMBER_OSCS];
-Ead *envs[NUMBER_OSCS];
+
+// Oh god.  I am going to have to do this for the Oscils as well
+Ead env1(CONTROL_RATE);
+Ead env2(CONTROL_RATE);
+Ead env3(CONTROL_RATE);
+Ead env4(CONTROL_RATE);
+
+Ead *envs[4] = {&env1, &env2, &env3, &env4};
+
 int gains[NUMBER_OSCS];
 unsigned int attack = 125;
 unsigned int decay = 250;
@@ -26,7 +34,6 @@ void setup(){
   Serial.begin(9600);
   Serial.println("Hello World");
   
- 
   for (int i = 0; i < NUMBER_OSCS; i++) {
     newButtons[i] = 0;
     oldButtons[i] = 0;
@@ -42,10 +49,7 @@ void setup(){
         break;
     }
     
-    Ead env = Ead(CONTROL_RATE);
-    
     oscs[i] = &aCos;
-    envs[i] = &env;
     gains[i] = 0;
   }
 }
@@ -56,37 +60,38 @@ void loop(){
 
 
 void updateControl(){
-  // OK, so this is envisioning that I have 48 oscillators just lying around waiting for their gains to be updated.
+  // OK, so this is envisioning that I have N oscillators just lying around waiting for their gains to be updated.
   
   //getFromTouchMagic(newButtons);
-  Serial.println("Top of updateControl");
 
   // Dummy update function
   for (int i = 0; i < NUMBER_OSCS; i++) {
     if (i == 0) {
       newButtons[i] = 1;
     }
-    Serial.println(newButtons[i]);
   }
   Serial.println("Read all newButtons");
+  
 
   // Do this very fast
-  // This breaks the first time I try to access the envelope. Fuckers.  
   for (int i = 0; i < NUMBER_OSCS; i++) {
+    
+    Serial.println(gains[i]);
+    
     // If the note is not on, start it
     if (newButtons[i] == 1 && oldButtons[i] == 0) {
       Serial.println("Turn on");
-      envs[i]->start(attack,decay);  // This line ends the world
-      //gains[i] = (int) envs[i]->next();
+      envs[i]->start(attack,decay);
+      gains[i] = (int) envs[i]->next();
     }
     // If the note is still on, keep it on
     if (newButtons[i] == 1 && oldButtons[i] == 1) {
-      if (gains[i] == 127){
+      if (gains[i] == 255){
         Serial.println("Leave alone");
-        // continue;
+        continue;
       } else {
         Serial.println("Turn up");
-        //gains[i] = (int) envs[i]->next();
+        gains[i] = (int) envs[i]->next();
       }
     }
     // If the note was on, stop it
@@ -105,9 +110,7 @@ void updateControl(){
 int updateAudio(){
   int asig = 0;
   for (int i = 0; i < NUMBER_OSCS; i++) {
-    // asig = asig + gains[i] * oscs[i]->next(); // Trying with no gain function
-    asig = asig + oscs[i]->next();
+    asig = asig + gains[i] * oscs[i]->next();
   }
-  Serial.println(asig);
   return asig >> 3;
 }
