@@ -74,11 +74,10 @@ void updateControl(){
 
 
 int updateAudio(){
-  int asig = oscs[0]->next() * newButtons[0]
-           + oscs[1]->next() * newButtons[1]
-           + oscs[2]->next() * newButtons[2]
-           + oscs[3]->next() * newButtons[3];
-           + oscs[4]->next() * newButtons[4];
+  int asig = 0;
+  for (int i = 0; i < NUMBER_OSCS; i++) {
+    asig = asig + oscs[i]->next() * newButtons[i];
+  }
 
   return asig >> 1;
 }
