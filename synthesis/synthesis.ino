@@ -9,7 +9,7 @@
 #include <tables/sin2048_int8.h>
 
 #define CONTROL_RATE 128
-#define NUMBER_OSCS 4
+#define NUMBER_OSCS 5
 
 byte newButtons[NUMBER_OSCS];
 byte oldButtons[NUMBER_OSCS];
@@ -20,8 +20,9 @@ Oscil <SIN2048_NUM_CELLS, AUDIO_RATE> osc1(SIN2048_DATA);
 Oscil <SIN2048_NUM_CELLS, AUDIO_RATE> osc2(SIN2048_DATA);
 Oscil <SIN2048_NUM_CELLS, AUDIO_RATE> osc3(SIN2048_DATA);
 Oscil <SIN2048_NUM_CELLS, AUDIO_RATE> osc4(SIN2048_DATA);
+Oscil <SIN2048_NUM_CELLS, AUDIO_RATE> osc5(SIN2048_DATA);
 
-Oscil<SIN2048_NUM_CELLS, AUDIO_RATE> *oscs[4] = {&osc1, &osc2, &osc3, &osc4};
+Oscil<SIN2048_NUM_CELLS, AUDIO_RATE> *oscs[NUMBER_OSCS] = {&osc1, &osc2, &osc3, &osc4, &osc5};
 
 
 void setup(){
@@ -34,19 +35,19 @@ void setup(){
     // cue giant switch statement to give each osc a frequency
     switch (i) {
       case 0:
-        oscs[i]->setFreq(880u);
+        oscs[i]->setFreq(522u);
         break;
       case 1:
-        oscs[i]->setFreq(440u);
+        oscs[i]->setFreq(586u);
         break;
       case 2:
         oscs[i]->setFreq(660u);
         break;
       case 3:
-        oscs[i]->setFreq(220u);
+        oscs[i]->setFreq(784u);
         break;
       default: 
-        oscs[i]->setFreq(440u);
+        oscs[i]->setFreq(880u);
         break;
     }
     
@@ -77,6 +78,7 @@ int updateAudio(){
            + oscs[1]->next() * newButtons[1]
            + oscs[2]->next() * newButtons[2]
            + oscs[3]->next() * newButtons[3];
+           + oscs[4]->next() * newButtons[4];
 
   return asig >> 1;
 }
