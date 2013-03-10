@@ -24,9 +24,13 @@ Oscil <SIN2048_NUM_CELLS, AUDIO_RATE> osc5(SIN2048_DATA);
 
 Oscil<SIN2048_NUM_CELLS, AUDIO_RATE> *oscs[NUMBER_OSCS] = {&osc1, &osc2, &osc3, &osc4, &osc5};
 
+EventDelay <CONTROL_RATE> eventDelay;
+int noteIndex = 0;
 
 void setup(){
   startMozzi(CONTROL_RATE);
+  Serial.begin(9600);
+  eventDelay.set(1000); // 1 second countdown, within resolution of CONTROL_RATE
   
   for (int i = 0; i < NUMBER_OSCS; i++) {
     newButtons[i] = 0;
@@ -62,13 +66,23 @@ void loop(){
 void updateControl(){
   // OK, so this is envisioning that I have N oscillators just lying around waiting for their gains to be updated.
   
-  //getFromTouchMagic(newButtons);
-
+  //realGetFromTouchFunction(newButtons);
+    
+  if(eventDelay.ready()){
+      noteIndex = (noteIndex + 1) % 5;
+      eventDelay.start();
+    }
+  
+ 
   // Dummy update function
   for (int i = 0; i < NUMBER_OSCS; i++) {
-    if (i == 2) {
+    if (i == noteIndex) {
         newButtons[i] = 1;
-      }      
+      }
+    else {
+      newButtons[i] = 0;
+    }
+    oldButtons[i] = newButtons[i];
   }
 }
 
