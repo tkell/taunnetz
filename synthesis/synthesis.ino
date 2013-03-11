@@ -10,7 +10,7 @@
 #include <tables/sin2048_int8.h>
 
 #define CONTROL_RATE 128
-#define NUMBER_OSCS 8
+#define NUMBER_OSCS 12
 
 byte newButtons[NUMBER_OSCS];
 byte oldButtons[NUMBER_OSCS];
@@ -24,9 +24,13 @@ Oscil <SIN2048_NUM_CELLS, AUDIO_RATE> osc5(SIN2048_DATA);
 Oscil <SIN2048_NUM_CELLS, AUDIO_RATE> osc6(SIN2048_DATA);
 Oscil <SIN2048_NUM_CELLS, AUDIO_RATE> osc7(SIN2048_DATA);
 Oscil <SIN2048_NUM_CELLS, AUDIO_RATE> osc8(SIN2048_DATA);
+Oscil <SIN2048_NUM_CELLS, AUDIO_RATE> osc9(SIN2048_DATA);
+Oscil <SIN2048_NUM_CELLS, AUDIO_RATE> osc10(SIN2048_DATA);
+Oscil <SIN2048_NUM_CELLS, AUDIO_RATE> osc11(SIN2048_DATA);
+Oscil <SIN2048_NUM_CELLS, AUDIO_RATE> osc12(SIN2048_DATA);
 
 Oscil<SIN2048_NUM_CELLS, AUDIO_RATE> *oscs[NUMBER_OSCS] = {
-    &osc1, &osc2, &osc3, &osc4, &osc5, &osc6, &osc7, &osc8
+    &osc1, &osc2, &osc3, &osc4, &osc5, &osc6, &osc7, &osc8, &osc9, &osc10, &osc11, &osc12
   };
 
 EventDelay <CONTROL_RATE> eventDelay;
@@ -80,7 +84,9 @@ void updateControl(){
 int updateAudio(){
   int asig = 0;
   for (int i = 0; i < NUMBER_OSCS; i++) {
-    asig = asig + oscs[i]->next() * newButtons[i];
+    if (newButtons[i] != 0) {
+      asig = asig + oscs[i]->next();
+    }
   }
 
   return asig >> 1;
