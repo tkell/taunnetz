@@ -7,7 +7,8 @@
 #include <EventDelay.h>
 #include <mozzi_midi.h>
 #include <fixedMath.h> // for Q16n16 fixed-point fractional number type
-#include <tables/sin2048_int8.h>
+#include <tables/smoothsquare8192_int8.h>
+#include <tables/triangle_warm8192_int8.h>
 
 #define CONTROL_RATE 128
 #define NUMBER_OSCS 12
@@ -16,20 +17,20 @@ byte newButtons[NUMBER_OSCS];
 byte oldButtons[NUMBER_OSCS];
 
 // Amazingly shitty need to declare every osc by hand
-Oscil <SIN2048_NUM_CELLS, AUDIO_RATE> osc1(SIN2048_DATA);
-Oscil <SIN2048_NUM_CELLS, AUDIO_RATE> osc2(SIN2048_DATA);
-Oscil <SIN2048_NUM_CELLS, AUDIO_RATE> osc3(SIN2048_DATA);
-Oscil <SIN2048_NUM_CELLS, AUDIO_RATE> osc4(SIN2048_DATA);
-Oscil <SIN2048_NUM_CELLS, AUDIO_RATE> osc5(SIN2048_DATA);
-Oscil <SIN2048_NUM_CELLS, AUDIO_RATE> osc6(SIN2048_DATA);
-Oscil <SIN2048_NUM_CELLS, AUDIO_RATE> osc7(SIN2048_DATA);
-Oscil <SIN2048_NUM_CELLS, AUDIO_RATE> osc8(SIN2048_DATA);
-Oscil <SIN2048_NUM_CELLS, AUDIO_RATE> osc9(SIN2048_DATA);
-Oscil <SIN2048_NUM_CELLS, AUDIO_RATE> osc10(SIN2048_DATA);
-Oscil <SIN2048_NUM_CELLS, AUDIO_RATE> osc11(SIN2048_DATA);
-Oscil <SIN2048_NUM_CELLS, AUDIO_RATE> osc12(SIN2048_DATA);
+Oscil <TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> osc1(TRIANGLE_WARM8192_DATA);
+Oscil <TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> osc2(TRIANGLE_WARM8192_DATA);
+Oscil <TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> osc3(TRIANGLE_WARM8192_DATA);
+Oscil <TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> osc4(TRIANGLE_WARM8192_DATA);
+Oscil <TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> osc5(TRIANGLE_WARM8192_DATA);
+Oscil <TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> osc6(TRIANGLE_WARM8192_DATA);
+Oscil <TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> osc7(TRIANGLE_WARM8192_DATA);
+Oscil <TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> osc8(TRIANGLE_WARM8192_DATA);
+Oscil <TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> osc9(TRIANGLE_WARM8192_DATA);
+Oscil <TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> osc10(TRIANGLE_WARM8192_DATA);
+Oscil <TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> osc11(TRIANGLE_WARM8192_DATA);
+Oscil <TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> osc12(TRIANGLE_WARM8192_DATA);
 
-Oscil<SIN2048_NUM_CELLS, AUDIO_RATE> *oscs[NUMBER_OSCS] = {
+Oscil<TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> *oscs[NUMBER_OSCS] = {
     &osc1, &osc2, &osc3, &osc4, &osc5, &osc6, &osc7, &osc8, &osc9, &osc10, &osc11, &osc12
   };
 
@@ -60,14 +61,17 @@ void loop(){
 void updateControl(){
   // OK, so this is envisioning that I have N oscillators just lying around waiting for their gains to be updated.
   
+  // This function will check every touch button, lowest to highest, but will stop after NUMBER_OSCS have been confirmed to be on.
+  // That is to say, each time we scan things, the lowest 12 notes will play
   //realGetFromTouchFunction(newButtons);
-    
+   
+   
+  // Dummy timing function  
   if(eventDelay.ready()){
       noteIndex = (noteIndex + 1) % NUMBER_OSCS;
       eventDelay.start();
     }
   
- 
   // Dummy update function
   for (int i = 0; i < NUMBER_OSCS; i++) {
     if (i == noteIndex) {
