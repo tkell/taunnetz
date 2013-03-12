@@ -48,7 +48,7 @@ void setup() {
     oldButtons[i] = 0;
     
     // Trying to automate the frequency setting - would be nice to get this in semitones,..
-    frequency = Q16n16_mtof(Q16n0_to_Q16n16(i + 71));
+    frequency = Q16n16_mtof(Q16n0_to_Q16n16(i + 72));
     oscs[i]->setFreq_Q16n16(frequency);
    
   }
