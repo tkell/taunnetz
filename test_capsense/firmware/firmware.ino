@@ -11,6 +11,7 @@
 int xres = 13;  // XRES pin on one of the CY8C201xx chips is connected to Arduino pin 13
 
 // where do I put the other two control pins?
+// And do I need multiple control pins?  or does all the muxing take place in software?
 
 //define values for slip coding
 byte escapeChar = 101;
@@ -52,26 +53,26 @@ void setup() {
 
     // chip #1: switch to setup mode
     Wire.beginTransmission(I2C_ADDR0);
-    Wire.send(COMMAND_REG);
-    Wire.send(0x08);
+    Wire.write(COMMAND_REG);
+    Wire.write(0x08);
     Wire.endTransmission();
 
     // chip #1: setup CS_ENABLE0 register
     Wire.beginTransmission(I2C_ADDR0);
-    Wire.send(CS_ENABLE0);
-    Wire.send(B00001111);
+    Wire.write(CS_ENABLE0);
+    Wire.write(B00001111);
     Wire.endTransmission();
 
     // chip #1: setup CS_ENABLE1 register
     Wire.beginTransmission(I2C_ADDR0);
-    Wire.send(CS_ENABLE1);
-    Wire.send(B00001111);
+    Wire.write(CS_ENABLE1);
+    Wire.write(B00001111);
     Wire.endTransmission();
 
     // chip #1: switch to normal mode
     Wire.beginTransmission(I2C_ADDR0);
-    Wire.send(COMMAND_REG);
-    Wire.send(0x07);
+    Wire.write(COMMAND_REG);
+    Wire.write(0x07);
     Wire.endTransmission();
 }
 
@@ -82,11 +83,11 @@ void loop() {
     ; // do nothing until polled
   }
   
-  // get the touch values from 2 x CY8C201xx chips
+  // get the touch values from 1 x CY8C201xx chips
   slipOut(readTouch(I2C_ADDR0));
-  slipOut(readTouch(I2C_ADDR1));
+
   
-  Serial.print(delimiterChar, BYTE);
+  Serial.write(delimiterChar);
 }
 
 byte readTouch(int address) {
@@ -94,26 +95,28 @@ byte readTouch(int address) {
   
   // request Register 00h: INPUT_PORT0
   Wire.beginTransmission(address);
-  Wire.send(INPUT_PORT0);
+  Wire.write(uint8_t(INPUT_PORT0));
   Wire.endTransmission();
   
   Wire.requestFrom(address, 1);
   while (!Wire.available()) {}
-  touch = Wire.receive() << 4;
+  touch = Wire.read() << 4;
   
   // request Register 01h: INPUT_PORT1
   Wire.beginTransmission(address);
-  Wire.send(INPUT_PORT1);
+  Wire.write(INPUT_PORT1);
   Wire.endTransmission();
   
   Wire.requestFrom(address, 1);
   while (!Wire.available()) {}
-  touch |= Wire.receive();
+  touch |= Wire.read();
   
   return touch;
 }
 
 void slipOut(byte output) {
-    if ((output==escapeChar)||(output==delimiterChar)) Serial.print(escapeChar, BYTE);
-    Serial.print(output, BYTE);
+    if (output == escapeChar || output == delimiterChar) {
+      Serial.write(escapeChar);
+    }
+    Serial.write(output);
 }
