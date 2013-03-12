@@ -10,14 +10,13 @@
 
 int xres = 13;  // XRES pin on one of the CY8C201xx chips is connected to Arduino pin 13
 
-// where do I put the other two control pins?
-
 //define values for slip coding
 byte escapeChar = 101;
 byte delimiterChar = 100;
 
 // I2C adresses
 #define I2C_ADDR0 0x00
+#define I2C_ADDR1 0x01
 
 // some CY8C201xx registers
 #define INPUT_PORT0 0x00
@@ -45,29 +44,74 @@ void setup() {
   // chip #1: put into reset mode
   digitalWrite(xres, HIGH);
   delay(100);
-
+  
+  // CONFIGURE CHIP #2
+    // chip #2: switch to setup mode
+    Wire.beginTransmission(I2C_ADDR0);
+    Wire.send(COMMAND_REG);
+    Wire.send(0x08);
+    Wire.endTransmission();
+    
+    // chip #2: setup CS_ENABLE0 register
+    Wire.beginTransmission(I2C_ADDR0);
+    Wire.send(CS_ENABLE0);
+    Wire.send(B00001111);
+    Wire.endTransmission();
+    
+    // chip #2: setup CS_ENABLE1 register
+    Wire.beginTransmission(I2C_ADDR0);
+    Wire.send(CS_ENABLE1);
+    Wire.send(B00001111);
+    Wire.endTransmission();
+    
+    // chip #2: switch to normal mode
+    Wire.beginTransmission(I2C_ADDR0);
+    Wire.send(COMMAND_REG);
+    Wire.send(0x07);
+    Wire.endTransmission();
+    
+    // chip #2: unlock the I2C_DEV_LOCK register
+    Wire.beginTransmission(I2C_ADDR0);
+    Wire.send(I2C_DEV_LOCK);
+    Wire.send(I2CDL_KEY_UNLOCK, 3);
+    Wire.endTransmission();
+    
+    // chip #2: change the I2C_ADDR_DM register to I2C_ADDR1
+    Wire.beginTransmission(I2C_ADDR0);
+    Wire.send(I2C_ADDR_DM);
+    Wire.send(I2C_ADDR1);
+    Wire.endTransmission();
+    
+    // chip #2: lock register again for change to take effect
+    Wire.beginTransmission(I2C_ADDR0);
+    Wire.send(I2C_DEV_LOCK);
+    Wire.send(I2CDL_KEY_LOCK, 3);
+    Wire.endTransmission();
+    // chip #2 now has the I2C address I2C_ADDR1
+  
+  // CONFIGURE CHIP #1
     // let the chip #1 wake up again
     digitalWrite(xres, LOW);
     delay(200);
-
+    
     // chip #1: switch to setup mode
     Wire.beginTransmission(I2C_ADDR0);
     Wire.send(COMMAND_REG);
     Wire.send(0x08);
     Wire.endTransmission();
-
+    
     // chip #1: setup CS_ENABLE0 register
     Wire.beginTransmission(I2C_ADDR0);
     Wire.send(CS_ENABLE0);
     Wire.send(B00001111);
     Wire.endTransmission();
-
+    
     // chip #1: setup CS_ENABLE1 register
     Wire.beginTransmission(I2C_ADDR0);
     Wire.send(CS_ENABLE1);
     Wire.send(B00001111);
     Wire.endTransmission();
-
+    
     // chip #1: switch to normal mode
     Wire.beginTransmission(I2C_ADDR0);
     Wire.send(COMMAND_REG);
