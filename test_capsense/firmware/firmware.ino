@@ -10,9 +10,6 @@
 
 int xres = 13;  // XRES pin on one of the CY8C201xx chips is connected to Arduino pin 13
 
-// where do I put the other two control pins?
-// And do I need multiple control pins?  or does all the muxing take place in software?
-
 //define values for slip coding
 byte escapeChar = 101;
 byte delimiterChar = 100;
@@ -35,7 +32,7 @@ byte I2CDL_KEY_LOCK[3] = {0x96, 0x5A, 0xC3};
 
 void setup() {
   // start serial interface
-  Serial.begin(115200);
+  Serial.begin(9600);
   
   //start I2C bus
   Wire.begin();
@@ -77,25 +74,25 @@ void setup() {
 }
 
 void loop() {
+  // Touch code
   byte i;
-  
-  while (Serial.read() == -1) {
-    ; // do nothing until polled
-  }
-  
   // get the touch values from 1 x CY8C201xx chips
-  slipOut(readTouch(I2C_ADDR0));
-  Serial.write(delimiterChar);
+  // GP0 Registers are the first four bits
+  Serial.print("Touch:  ");
+  Serial.println(readTouch(I2C_ADDR0), BIN); 
+
+  delay(2000); 
+  
 }
 
 byte readTouch(int address) {
   byte touch = 0;
-  
+
   // request Register 00h: INPUT_PORT0
   Wire.beginTransmission(address);
   Wire.write(uint8_t(INPUT_PORT0));
   Wire.endTransmission();
-  
+      
   Wire.requestFrom(address, 1);
   while (!Wire.available()) {}
   touch = Wire.read() << 4;
@@ -107,14 +104,15 @@ byte readTouch(int address) {
   
   Wire.requestFrom(address, 1);
   while (!Wire.available()) {}
-  touch |= Wire.read();
   
+  touch |= Wire.read();
   return touch;
 }
 
 void slipOut(byte output) {
+    Serial.println("Touch: ");
     if (output == escapeChar || output == delimiterChar) {
-      Serial.write(escapeChar);
+      Serial.println(escapeChar);
     }
-    Serial.write(output);
+    Serial.println(output);
 }

@@ -22,15 +22,79 @@
 // Devices with higher bit address might not be seen properly.
 //
 
+
 #include <Wire.h>
+
+
+// Joe's code
+int xres = 13;  // XRES pin on one of the CY8C201xx chips is connected to Arduino pin 13
+
+//define values for slip coding
+byte escapeChar = 101;
+byte delimiterChar = 100;
+
+// I2C adresses
+#define I2C_ADDR0 0x00
+
+// some CY8C201xx registers
+#define INPUT_PORT0 0x00
+#define INPUT_PORT1 0x01
+#define CS_ENABLE0 0x06
+#define CS_ENABLE1 0x07
+#define I2C_DEV_LOCK 0x79
+#define I2C_ADDR_DM 0x7C
+#define COMMAND_REG 0xA0
+
+// Secret codes for locking/unlocking the I2C_DEV_LOCK register
+byte I2CDL_KEY_UNLOCK[3] = {0x3C, 0xA5, 0x69};
+byte I2CDL_KEY_LOCK[3] = {0x96, 0x5A, 0xC3};
 
 
 void setup()
 {
   Wire.begin();
+  
+  // Joe/s code
+  // set pin modes
+  pinMode(xres, OUTPUT);
+  
+  // chip #1: put into reset mode
+  digitalWrite(xres, HIGH);
+  delay(100);
+
+    // let the chip #1 wake up again
+    digitalWrite(xres, LOW);
+    delay(200);
+
+    // chip #1: switch to setup mode
+    Wire.beginTransmission(I2C_ADDR0);
+    Wire.write(COMMAND_REG);
+    Wire.write(0x08);
+    Wire.endTransmission();
+
+    // chip #1: setup CS_ENABLE0 register
+    Wire.beginTransmission(I2C_ADDR0);
+    Wire.write(CS_ENABLE0);
+    Wire.write(B00001111);
+    Wire.endTransmission();
+
+    // chip #1: setup CS_ENABLE1 register
+    Wire.beginTransmission(I2C_ADDR0);
+    Wire.write(CS_ENABLE1);
+    Wire.write(B00001111);
+    Wire.endTransmission();
+
+    // chip #1: switch to normal mode
+    Wire.beginTransmission(I2C_ADDR0);
+    Wire.write(COMMAND_REG);
+    Wire.write(0x07);
+    Wire.endTransmission();
+  
 
   Serial.begin(9600);
   Serial.println("\nI2C Scanner");
+  
+
 }
 
 
@@ -38,12 +102,13 @@ void loop()
 {
   byte error, address;
   int nDevices;
-
-  Serial.println("Scanning...");
-
+  
+  
+  
   nDevices = 0;
-  for(address = 1; address < 120; address++ ) 
+  for(address = 0; address < 1; address++ ) 
   {
+    Serial.println(address);
     // The i2c_scanner uses the return value of
     // the Write.endTransmisstion to see if
     // a device did acknowledge to the address.
@@ -73,5 +138,5 @@ void loop()
   else
     Serial.println("done\n");
 
-  delay(5000);           // wait 5 seconds for next scan
+  delay(2000);           // wait 5 seconds for next scan
 }
