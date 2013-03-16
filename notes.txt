@@ -1,0 +1,5 @@
+For I2C
+Analog 4 is SDA - Analog 5 is SCL.
+
+We can connect multiple devices to these two pins, but we need to ground all of them.
+

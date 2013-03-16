@@ -85,8 +85,6 @@ void loop() {
   
   // get the touch values from 1 x CY8C201xx chips
   slipOut(readTouch(I2C_ADDR0));
-
-  
   Serial.write(delimiterChar);
 }
 
