@@ -1,18 +1,47 @@
-// Test program for reading CY8C201xx using I2C
-// Joseph Malloch 2011
-// Input Devices and Music Interaction Lab
+// Cypress touch code via Joe, with deep thanks to Av for helping me with harwdware
 
-// See the CY8C201xx Register Reference Guide for more info:
-// http://www.cypress.com/?docID=24620
-
-// include Wire library to read and write I2C commands:
 #include <Wire.h>
 
-int xres = 13;  // XRES pin on one of the CY8C201xx chips is connected to Arduino pin 13
+#include <MozziGuts.h>
+#include <Oscil.h>
+#include <EventDelay.h>
+#include <mozzi_midi.h>
+#include <fixedMath.h> // for Q16n16 fixed-point fractional number type
+#include <tables/smoothsquare8192_int8.h>
+#include <tables/triangle_warm8192_int8.h>
 
-//define values for slip coding
-byte escapeChar = 101;
-byte delimiterChar = 100;
+// Synthesis code
+#define CONTROL_RATE 128
+#define NUMBER_OSCS 12
+
+byte newButtons[NUMBER_OSCS];
+byte oldButtons[NUMBER_OSCS];
+
+// Amazingly shitty need to declare every osc by hand
+Oscil <TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> osc1(TRIANGLE_WARM8192_DATA);
+Oscil <TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> osc2(TRIANGLE_WARM8192_DATA);
+Oscil <TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> osc3(TRIANGLE_WARM8192_DATA);
+Oscil <TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> osc4(TRIANGLE_WARM8192_DATA);
+Oscil <TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> osc5(TRIANGLE_WARM8192_DATA);
+Oscil <TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> osc6(TRIANGLE_WARM8192_DATA);
+Oscil <TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> osc7(TRIANGLE_WARM8192_DATA);
+Oscil <TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> osc8(TRIANGLE_WARM8192_DATA);
+Oscil <TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> osc9(TRIANGLE_WARM8192_DATA);
+Oscil <TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> osc10(TRIANGLE_WARM8192_DATA);
+Oscil <TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> osc11(TRIANGLE_WARM8192_DATA);
+Oscil <TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> osc12(TRIANGLE_WARM8192_DATA);
+
+Oscil<TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> *oscs[NUMBER_OSCS] = {
+    &osc1, &osc2, &osc3, &osc4, &osc5, &osc6, &osc7, &osc8, &osc9, &osc10, &osc11, &osc12
+  };
+
+EventDelay <CONTROL_RATE> eventDelay;
+int noteIndex = 0;
+Q16n16 frequency;
+
+
+// Touch code
+int xres = 13;  // XRES pin on one of the CY8C201xx chips is connected to Arduino pin 13
 
 // I2C adresses
 #define I2C_ADDR0 0x00
@@ -30,9 +59,10 @@ byte delimiterChar = 100;
 byte I2CDL_KEY_UNLOCK[3] = {0x3C, 0xA5, 0x69};
 byte I2CDL_KEY_LOCK[3] = {0x96, 0x5A, 0xC3};
 
+
 void setup() {
   // start serial interface
-  Serial.begin(9600);
+  //Serial.begin(9600);
   
   //start I2C bus
   Wire.begin();
@@ -71,20 +101,69 @@ void setup() {
     Wire.write(COMMAND_REG);
     Wire.write(0x07);
     Wire.endTransmission();
+    //Serial.println("Finished touch setup");
+  
+  
+  startMozzi(CONTROL_RATE);
+  for (int i = 0; i < NUMBER_OSCS; i++) {
+    newButtons[i] = 0;
+    oldButtons[i] = 0;
+    // Set frequencies
+    frequency = Q16n16_mtof(Q16n0_to_Q16n16(i + 72));
+    oscs[i]->setFreq_Q16n16(frequency);
+  }
+  //Serial.println("Finished Mozzi setup");
+  
+    
 }
 
 void loop() {
-  // Touch code
-  byte i;
-  // get the touch values from 1 x CY8C201xx chips
-  // GP0 Registers are the first four bits
-  Serial.print("Touch:  ");
-  Serial.println(readTouch(I2C_ADDR0), BIN); 
+   audioHook();
+}
 
-  delay(2000); 
+void updateControl(){
+  byte touchData;
+  byte mask;
+  // get the touch values from 1 x CY8C201xx chips
+  // GP0 Registers are the higher first four bits
+  
+  
+  touchData = readTouch(I2C_ADDR0); 
+  //Serial.print("Touch:  ");
+  //Serial.println(touchData, BIN);
+
+  // Temp update for a single IC - we'll eventually have six loops to work ou
+  int i = 0;
+  for (mask = 00000001; mask > 0; mask <<= 1) {
+    if (touchData & mask) {
+      newButtons[i] = 1;
+    } else {
+      newButtons[i] = 0;
+    }
+    //Serial.print(newButtons[i]);
+    i++;
+  }
+  //Serial.println("");
+  oldButtons[i] = newButtons[i];
+  
+  
   
 }
 
+
+int updateAudio(){
+  int asig = 0;
+  for (int i = 0; i < NUMBER_OSCS; i++) {
+    if (newButtons[i] != 0) {
+      asig = asig + oscs[i]->next();
+    }
+  }
+
+  return asig >> 1;
+}
+
+
+// Touch Code
 byte readTouch(int address) {
   byte touch = 0;
 
@@ -109,10 +188,3 @@ byte readTouch(int address) {
   return touch;
 }
 
-void slipOut(byte output) {
-    Serial.println("Touch: ");
-    if (output == escapeChar || output == delimiterChar) {
-      Serial.println(escapeChar);
-    }
-    Serial.println(output);
-}
