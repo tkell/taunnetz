@@ -4,4 +4,17 @@ Analog 4 is SDA - Analog 5 is SCL.
 We can connect multiple devices to these two pins, but we need to ground all of them.
 
 
-Remeber that running the serial port fucks with the audio output!!!
+Remember that running the serial port fucks with the audio output!!!
+
+The datasheet:  http://www.cypress.com/?docID=41804
+
+
+Protoboard layout:
+
+Column 1:  Power
+Column 3:  Ground
+Column 5:  SCL
+Column 7:  SDA
+
+XRES:  Connect directly
+
