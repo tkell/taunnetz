@@ -35,9 +35,8 @@ Oscil<TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> *oscs[NUMBER_OSCS] = {
   };
 
 EventDelay <CONTROL_RATE> eventDelay;
-int noteIndex = 0;
 Q16n16 frequency;
-
+byte gain;
 
 // Touch code
 int xres = 13;  // XRES pin on one of the CY8C201xx chips is connected to Arduino pin 13
@@ -194,8 +193,11 @@ int updateAudio(){
       asig = asig + oscs[i]->next();
     }
   }
-
-  return asig >> 2;
+  //  >> 3 works for 1-3 oscs.  
+  // >> 4 should work for 4-6
+  // >> ? should work for 7-9
+  // >> ? should work for 10-12
+  return asig >> 3;
 }
 
 
