@@ -124,30 +124,67 @@ void loop() {
 void updateControl(){
   byte touchData;
   byte mask;
-  // get the touch values from 1 x CY8C201xx chips
-  // GP0 Registers are the higher first four bits
   
-  
+  // get the touch values from 1 x CY8C201xx chips - GP0 are the higher bits, GP1 the lower bits
   touchData = readTouch(I2C_ADDR0); 
   //Serial.print("Touch:  ");
   //Serial.println(touchData, BIN);
 
-  // Temp update for a single IC - we'll eventually have six loops to work ou
+  // Temp update for a single IC - we'll eventually have six loops to work out
+  // We're now changing the frequency with each press
   int i = 0;
   for (mask = 00000001; mask > 0; mask <<= 1) {
     if (touchData & mask) {
       newButtons[i] = 1;
+      
+      switch (mask) {
+        case 00000001:
+          frequency = Q16n16_mtof(Q16n0_to_Q16n16(72));
+          oscs[i]->setFreq_Q16n16(frequency);
+          break;
+        case 00000010:
+          frequency = Q16n16_mtof(Q16n0_to_Q16n16(73));
+          oscs[i]->setFreq_Q16n16(frequency);
+          break;
+        case 00000100:
+          frequency = Q16n16_mtof(Q16n0_to_Q16n16(74));
+          oscs[i]->setFreq_Q16n16(frequency);
+          break;
+        case 00001000:
+          frequency = Q16n16_mtof(Q16n0_to_Q16n16(75));
+          oscs[i]->setFreq_Q16n16(frequency);
+          break;
+        case 00010000:
+          frequency = Q16n16_mtof(Q16n0_to_Q16n16(76));
+          oscs[i]->setFreq_Q16n16(frequency);
+          break;
+        case 00100000:
+          frequency = Q16n16_mtof(Q16n0_to_Q16n16(77));
+          oscs[i]->setFreq_Q16n16(frequency);
+          break;
+        case 01000000:
+          frequency = Q16n16_mtof(Q16n0_to_Q16n16(78));
+          oscs[i]->setFreq_Q16n16(frequency);
+          break;
+        case 10000000:
+          frequency = Q16n16_mtof(Q16n0_to_Q16n16(79));
+          oscs[i]->setFreq_Q16n16(frequency);
+          break;          
+        default:
+          break;
+      }
+      
     } else {
       newButtons[i] = 0;
     }
     //Serial.print(newButtons[i]);
     i++;
   }
+  
+  // copy the above, keep i the same - will need to drop huge if statements in here, I think.
+  
   //Serial.println("");
-  oldButtons[i] = newButtons[i];
-  
-  
-  
+  oldButtons[i] = newButtons[i];  
 }
 
 
@@ -159,7 +196,7 @@ int updateAudio(){
     }
   }
 
-  return asig >> 1;
+  return asig >> 2;
 }
 
 

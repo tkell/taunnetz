@@ -18,3 +18,5 @@ Column 7:  SDA
 
 XRES:  Connect directly
 
+Synthesis:  We cannot run 24 oscillators at once.
+Thus, we need to change the frequency at updateControl
