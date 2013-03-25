@@ -115,10 +115,32 @@ void loop() {
    audioHook();
 }
 
-void updateControl(){
+int playNotes(byte touchData, int oscIndex, int frequencies[]) {
+  byte mask;
+  int freqIndex = 0;
+  
+  for (mask = 00000001; mask > 0; mask <<= 1) {
+    if (oscIndex >= NUMBER_OSCS) { 
+      break;
+    }
+    if (touchData & mask) {
+      //Serial.println(mask);
+      frequency = Q16n16_mtof(Q16n0_to_Q16n16(frequencies[freqIndex]));
+      oscs[oscIndex]->setFreq_Q16n16(frequency);  
+      newButtons[oscIndex] = 1;
+      oscIndex++;
+    }
+    freqIndex++;
+  }
+  
+  return oscIndex;
+}
+
+void updateControl() {
   byte touchData;
   byte mask;
   int oscIndex = 0;
+  int pitchArray[8];
   
   // get the touch values from 1 x CY8C201xx chips - GP0 are the higher bits, GP1 the lower bits
   touchData = readTouch(I2C_ADDR0); 
@@ -131,54 +153,64 @@ void updateControl(){
   // increment oscIndex every time we actually turn a thing on.
   // once oscIndex goes over 11, we break out
   // if, once we're done, oscIndex is less than 11, set oscIndex to 11 to zeroint oscIndex = 0;
-
   
-  for (mask = 00000001; mask > 0; mask <<= 1) {
-    if (oscIndex >= NUMBER_OSCS) { 
-      break;
-    }
-    if (touchData & mask) {
-      //Serial.println(mask);
-      switch (mask) {
-          case 1:
-          frequency = Q16n16_mtof(Q16n0_to_Q16n16(72));
-          oscs[oscIndex]->setFreq_Q16n16(frequency);
-          break;
-        case 2:
-          frequency = Q16n16_mtof(Q16n0_to_Q16n16(73));
-          oscs[oscIndex]->setFreq_Q16n16(frequency);
-          break;
-        case 4:
-          frequency = Q16n16_mtof(Q16n0_to_Q16n16(74));
-          oscs[oscIndex]->setFreq_Q16n16(frequency);
-          break;
-        case 8:
-          frequency = Q16n16_mtof(Q16n0_to_Q16n16(75));
-          oscs[oscIndex]->setFreq_Q16n16(frequency);
-          break;
-        case 16:
-          frequency = Q16n16_mtof(Q16n0_to_Q16n16(76));
-          oscs[oscIndex]->setFreq_Q16n16(frequency);
-          break;
-        case 32:
-          frequency = Q16n16_mtof(Q16n0_to_Q16n16(77));
-          oscs[oscIndex]->setFreq_Q16n16(frequency);
-          break;
-        case 64:
-          frequency = Q16n16_mtof(Q16n0_to_Q16n16(78));
-          oscs[oscIndex]->setFreq_Q16n16(frequency);
-          break;
-        case 128:
-          frequency = Q16n16_mtof(Q16n0_to_Q16n16(79));
-          oscs[oscIndex]->setFreq_Q16n16(frequency);
-          break;          
-        default:
-          break;
-      }
-      newButtons[oscIndex] = 1;
-      oscIndex++;
-    } 
-  }
+  pitchArray = {69, 73, 77, 69, 73, 77, 76, 80};
+  oscIndex = playNotes(touchData, oscIndex, pitchArray);
+  
+  // To be followed by, for all six chips.  
+  // touchData = readTouch(I2C_ADDR1);
+  // pitchArray = {84, 76, 80, 84, 82, 87, 89, 82};
+  // oscIndex = playNotes(touchData, oscIndex, pitchArray);
+  
+
+//  
+//  for (mask = 00000001; mask > 0; mask <<= 1) {
+//    if (oscIndex >= NUMBER_OSCS) { 
+//      break;
+//    }
+//    if (touchData & mask) {
+//      //Serial.println(mask);
+//      switch (mask) {
+//          case 1:
+//          frequency = Q16n16_mtof(Q16n0_to_Q16n16(72));
+//          oscs[oscIndex]->setFreq_Q16n16(frequency);
+//          break;
+//        case 2:
+//          frequency = Q16n16_mtof(Q16n0_to_Q16n16(73));
+//          oscs[oscIndex]->setFreq_Q16n16(frequency);
+//          break;
+//        case 4:
+//          frequency = Q16n16_mtof(Q16n0_to_Q16n16(74));
+//          oscs[oscIndex]->setFreq_Q16n16(frequency);
+//          break;
+//        case 8:
+//          frequency = Q16n16_mtof(Q16n0_to_Q16n16(75));
+//          oscs[oscIndex]->setFreq_Q16n16(frequency);
+//          break;
+//        case 16:
+//          frequency = Q16n16_mtof(Q16n0_to_Q16n16(76));
+//          oscs[oscIndex]->setFreq_Q16n16(frequency);
+//          break;
+//        case 32:
+//          frequency = Q16n16_mtof(Q16n0_to_Q16n16(77));
+//          oscs[oscIndex]->setFreq_Q16n16(frequency);
+//          break;
+//        case 64:
+//          frequency = Q16n16_mtof(Q16n0_to_Q16n16(78));
+//          oscs[oscIndex]->setFreq_Q16n16(frequency);
+//          break;
+//        case 128:
+//          frequency = Q16n16_mtof(Q16n0_to_Q16n16(79));
+//          oscs[oscIndex]->setFreq_Q16n16(frequency);
+//          break;          
+//        default:
+//          break;
+//      }
+//      newButtons[oscIndex] = 1;
+//      oscIndex++;
+//    } 
+//  }
+  
   
   // Turn off any unused oscillators
   for (oscIndex; oscIndex < NUMBER_OSCS; oscIndex++) {
