@@ -1,4 +1,4 @@
-// Cypress touch code via Joe, with deep thanks to Av for helping me with harwdware
+// Cypress touch code via Joe, with deep thanks to Av, Ian, and Hackon for helping me with harwdware
 
 #include <Wire.h>
 
@@ -11,7 +11,7 @@
 #include <tables/triangle_warm8192_int8.h>
 
 // Synthesis code
-#define CONTROL_RATE 128
+#define CONTROL_RATE 64
 #define NUMBER_OSCS 12
 
 byte newButtons[NUMBER_OSCS];
@@ -34,15 +34,15 @@ Oscil<TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> *oscs[NUMBER_OSCS] = {
     &osc1, &osc2, &osc3, &osc4, &osc5, &osc6, &osc7, &osc8, &osc9, &osc10, &osc11, &osc12
   };
 
-EventDelay <CONTROL_RATE> eventDelay;
 Q16n16 frequency;
-byte gain;
 
 // Touch code
-int xres = 13;  // XRES pin on one of the CY8C201xx chips is connected to Arduino pin 13
+int xres1 = 11;  // XRES pin for chip 1
 
 // I2C adresses
 #define I2C_ADDR0 0x00
+#define I2C_ADDR1 0x01
+#define I2C_ADDR2 0x02
 
 // some CY8C201xx registers
 #define INPUT_PORT0 0x00
@@ -60,46 +60,54 @@ byte I2CDL_KEY_LOCK[3] = {0x96, 0x5A, 0xC3};
 
 void setup() {
   // start serial interface
-  //Serial.begin(9600);
+  // Serial.begin(9600);
   
   //start I2C bus
   Wire.begin();
   
+  // ok.  So I want to make this work for 3 chips
+  // Does this mean that I have to put all other chips into reset mode?  I feel like it does.  
+  // So I will set my pin modes for my 2 xres chips
+  // then put 1 and 2 into reset mode, and assign 3
+  // then leave 1 in reset mode, and assign 2
+  // then assign 1
+  
   // set pin modes
-  pinMode(xres, OUTPUT);
+  pinMode(xres1, OUTPUT);
   
   // chip #1: put into reset mode
-  digitalWrite(xres, HIGH);
-  delay(100);
+  digitalWrite(xres1, HIGH);
+  delay(200);
 
-    // let the chip #1 wake up again
-    digitalWrite(xres, LOW);
-    delay(200);
+  // CONFIGURE CHIP 1
+  // let chip #1 wake up again
+  digitalWrite(xres1, LOW);
+  delay(200);
 
-    // chip #1: switch to setup mode
-    Wire.beginTransmission(I2C_ADDR0);
-    Wire.write(COMMAND_REG);
-    Wire.write(0x08);
-    Wire.endTransmission();
+  // chip #1: switch to setup mode
+  Wire.beginTransmission(I2C_ADDR0);
+  Wire.write(COMMAND_REG);
+  Wire.write(0x08);
+  Wire.endTransmission();
 
-    // chip #1: setup CS_ENABLE0 register
-    Wire.beginTransmission(I2C_ADDR0);
-    Wire.write(CS_ENABLE0);
-    Wire.write(B00001111);
-    Wire.endTransmission();
+  // chip #1: setup CS_ENABLE0 register
+  Wire.beginTransmission(I2C_ADDR0);
+  Wire.write(CS_ENABLE0);
+  Wire.write(B00001111);
+  Wire.endTransmission();
 
-    // chip #1: setup CS_ENABLE1 register
-    Wire.beginTransmission(I2C_ADDR0);
-    Wire.write(CS_ENABLE1);
-    Wire.write(B00001111);
-    Wire.endTransmission();
+  // chip #1: setup CS_ENABLE1 register
+  Wire.beginTransmission(I2C_ADDR0);
+  Wire.write(CS_ENABLE1);
+  Wire.write(B00001111);
+  Wire.endTransmission();
 
-    // chip #1: switch to normal mode
-    Wire.beginTransmission(I2C_ADDR0);
-    Wire.write(COMMAND_REG);
-    Wire.write(0x07);
-    Wire.endTransmission();
-    //Serial.println("Finished touch setup");
+  // chip #1: switch to normal mode
+  Wire.beginTransmission(I2C_ADDR0);
+  Wire.write(COMMAND_REG);
+  Wire.write(0x07);
+  Wire.endTransmission();
+  //Serial.println("Finished touch setup");
   
   
   startMozzi(CONTROL_RATE);
@@ -107,8 +115,6 @@ void setup() {
     newButtons[i] = 0;
   }
   //Serial.println("Finished Mozzi setup");
-  
-    
 }
 
 void loop() {
@@ -142,20 +148,30 @@ void updateControl() {
   int oscIndex = 0;
   int pitchArray[8];
   
-  // get the touch values from 1 x CY8C201xx chips - GP0 are the higher bits, GP1 the lower bits
-  touchData = readTouch(I2C_ADDR0); 
   //Serial.print("Touch:  ");
   //Serial.println(touchData, BIN);
 
   // Temp update for a single IC - we'll eventually have six loops to work out
   // We're now changing the frequency with each press
-  // Put in a for 0 - 5 loop here, for each IC
   // increment oscIndex every time we actually turn a thing on.
   // once oscIndex goes over 11, we break out
   // if, once we're done, oscIndex is less than 11, set oscIndex to 11 to zeroint oscIndex = 0;
   
-  pitchArray = {69, 73, 77, 69, 73, 77, 76, 80};
+  
+  // For 3 chips
+  touchData = readTouch(I2C_ADDR0); // get the touch values from 1 x CY8C201xx chips - GP0 are the higher bits, GP1 the lower
+  pitchArray = {69, 69, 69, 69, 69, 69, 69, 69};
   oscIndex = playNotes(touchData, oscIndex, pitchArray);
+  
+  //Serial.print("Touch 1:  ");
+  //Serial.println(touchData, BIN);
+  
+  //touchData = readTouch(I2C_ADDR1); 
+  //pitchArray = {72, 72, 72, 72, 72, 72, 72, 72};
+  //oscIndex = playNotes(touchData, oscIndex, pitchArray);
+  
+  //Serial.print("Touch 2:  ");
+  //Serial.println(touchData, BIN);
   
   // To be followed by, for all six chips.  
   // touchData = readTouch(I2C_ADDR1);
