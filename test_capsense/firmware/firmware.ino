@@ -45,6 +45,7 @@ int xres = 13;  // XRES pin on one of the CY8C201xx chips is connected to Arduin
 
 // I2C adresses
 #define I2C_ADDR0 0x00
+#define I2C_ADDR1 0x01
 
 // some CY8C201xx registers
 #define INPUT_PORT0 0x00
@@ -59,10 +60,64 @@ int xres = 13;  // XRES pin on one of the CY8C201xx chips is connected to Arduin
 byte I2CDL_KEY_UNLOCK[3] = {0x3C, 0xA5, 0x69};
 byte I2CDL_KEY_LOCK[3] = {0x96, 0x5A, 0xC3};
 
+// Set a chip up so we can read its register
+void configureChip(int address) {
+  
+  byte error;
+  
+  // switch to setup mode
+  Wire.beginTransmission(address);
+  Wire.write(COMMAND_REG);
+  Wire.write(0x08);
+  error = Wire.endTransmission();
+  Serial.print("Switched to setup mode:  ");
+  Serial.println(error);
+
+  // setup CS_ENABLE0 register
+  Wire.beginTransmission(address);
+  Wire.write(CS_ENABLE0);
+  Wire.write(B00001111);
+  Wire.endTransmission();
+
+  // setup CS_ENABLE1 register
+  Wire.beginTransmission(address);
+  Wire.write(CS_ENABLE1);
+  Wire.write(B00001111);
+  Wire.endTransmission();
+
+  // switch to normal mode
+  Wire.beginTransmission(address);
+  Wire.write(COMMAND_REG);
+  Wire.write(0x07);
+  Wire.endTransmission();
+}
+
+// Change the I2C address of a chip
+void changeAddress(int currAddress, int newAddress) {
+     // unlock the I2C_DEV_LOCK register
+    Wire.beginTransmission(currAddress);
+    Wire.write(I2C_DEV_LOCK);
+    Wire.write(I2CDL_KEY_UNLOCK, 3);
+    Wire.endTransmission();
+    
+    //change the I2C_ADDR_DM register to newAddress
+    Wire.beginTransmission(currAddress);
+    Wire.write(I2C_ADDR_DM);
+    Wire.write(newAddress);
+    Wire.endTransmission();
+    
+    //lock register again for change to take effect
+    Wire.beginTransmission(currAddress);
+    Wire.write(I2C_DEV_LOCK);
+    Wire.write(I2CDL_KEY_LOCK, 3);
+    Wire.endTransmission();
+    // the I2C address is now newAddress
+}
+
 
 void setup() {
   // start serial interface
-  //Serial.begin(9600);
+  Serial.begin(9600);
   
   //start I2C bus
   Wire.begin();
@@ -73,81 +128,55 @@ void setup() {
   // chip #1: put into reset mode
   digitalWrite(xres, HIGH);
   delay(100);
+  
+  // Configure "chip 2"
+  Serial.println("chip 2:  ");
+  configureChip(I2C_ADDR0);  
+  // OK, so this is failing.  None of my attempted wire commands are sending.
+  // Is this because I have the address wrong?  Or because I am not connected correctly?
+  changeAddress(I2C_ADDR0, I2C_ADDR1);
 
-    // let the chip #1 wake up again
-    digitalWrite(xres, LOW);
-    delay(200);
+  // let the chip #1 wake up again
+  digitalWrite(xres, LOW);
+  delay(200);
 
-    // chip #1: switch to setup mode
-    Wire.beginTransmission(I2C_ADDR0);
-    Wire.write(COMMAND_REG);
-    Wire.write(0x08);
-    Wire.endTransmission();
+  // configure chip 1
+  Serial.println("chip 1:  ");
+  configureChip(I2C_ADDR0);
 
-    // chip #1: setup CS_ENABLE0 register
-    Wire.beginTransmission(I2C_ADDR0);
-    Wire.write(CS_ENABLE0);
-    Wire.write(B00001111);
-    Wire.endTransmission();
-
-    // chip #1: setup CS_ENABLE1 register
-    Wire.beginTransmission(I2C_ADDR0);
-    Wire.write(CS_ENABLE1);
-    Wire.write(B00001111);
-    Wire.endTransmission();
-
-    // chip #1: switch to normal mode
-    Wire.beginTransmission(I2C_ADDR0);
-    Wire.write(COMMAND_REG);
-    Wire.write(0x07);
-    Wire.endTransmission();
-    //Serial.println("Finished touch setup");
+    
+  Serial.println("Finished touch setup");
   
   
-  startMozzi(CONTROL_RATE);
+  //startMozzi(CONTROL_RATE);
   for (int i = 0; i < NUMBER_OSCS; i++) {
     newButtons[i] = 0;
-    oldButtons[i] = 0;
-    // Set frequencies
-    frequency = Q16n16_mtof(Q16n0_to_Q16n16(i + 72));
-    oscs[i]->setFreq_Q16n16(frequency);
   }
   //Serial.println("Finished Mozzi setup");
   
     
 }
 
+
+
+
 void loop() {
-   audioHook();
+  
+  byte touchData;
+
+  touchData = readTouch(I2C_ADDR0); 
+  Serial.print("Touch:  ");
+  Serial.println(touchData, BIN);
+  
+  // This will crash
+  touchData = readTouch(I2C_ADDR1); 
+  Serial.print("Touch:  ");
+  Serial.println(touchData, BIN);
 }
 
 void updateControl(){
   byte touchData;
   byte mask;
-  // get the touch values from 1 x CY8C201xx chips
-  // GP0 Registers are the higher first four bits
-  
-  
-  touchData = readTouch(I2C_ADDR0); 
-  //Serial.print("Touch:  ");
-  //Serial.println(touchData, BIN);
-
-  // Temp update for a single IC - we'll eventually have six loops to work ou
-  int i = 0;
-  for (mask = 00000001; mask > 0; mask <<= 1) {
-    if (touchData & mask) {
-      newButtons[i] = 1;
-    } else {
-      newButtons[i] = 0;
-    }
-    //Serial.print(newButtons[i]);
-    i++;
-  }
-  //Serial.println("");
-  oldButtons[i] = newButtons[i];
-  
-  
-  
 }
 
 

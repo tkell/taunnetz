@@ -27,14 +27,15 @@
 
 
 // Joe's code
-int xres = 13;  // XRES pin on one of the CY8C201xx chips is connected to Arduino pin 13
+// SOMETHING ABOUT PIN 13 IS SPECIAL.  
+// It is apparently connected to the led, and may have another resistor.  Must read up on it and how to xres these chips
 
-//define values for slip coding
-byte escapeChar = 101;
-byte delimiterChar = 100;
+int xres1 = 12;  // XRES pin on one of the CY8C201xx chips is connected to Arduino pin 13
+int xres2 = 13;  // XRES pin on one of the CY8C201xx chips is connected to Arduino pin 12
 
 // I2C adresses
 #define I2C_ADDR0 0x00
+#define I2C_ADDR1 0x01
 
 // some CY8C201xx registers
 #define INPUT_PORT0 0x00
@@ -50,51 +51,90 @@ byte I2CDL_KEY_UNLOCK[3] = {0x3C, 0xA5, 0x69};
 byte I2CDL_KEY_LOCK[3] = {0x96, 0x5A, 0xC3};
 
 
+void configureChip(int address) {
+  byte error;
+  Serial.println("Configuring chip");
+  // switch to setup mode
+  Wire.beginTransmission(address);
+  Wire.write(COMMAND_REG);
+  Wire.write(0x08);
+  error = Wire.endTransmission();
+  Serial.print("Switched to setup mode:  ");
+  Serial.println(error);
+
+  // setup CS_ENABLE0 register
+  Wire.beginTransmission(address);
+  Wire.write(CS_ENABLE0);
+  Wire.write(B00001111);
+  Wire.endTransmission();
+
+  // setup CS_ENABLE1 register
+  Wire.beginTransmission(address);
+  Wire.write(CS_ENABLE1);
+  Wire.write(B00001111);
+  Wire.endTransmission();
+
+  // switch to normal mode
+  Wire.beginTransmission(address);
+  Wire.write(COMMAND_REG);
+  Wire.write(0x07);
+  Wire.endTransmission();
+}
+
+// Change the I2C address of a chip
+void changeAddress(int currAddress, int newAddress) {
+    Serial.println("Changing address");
+     // unlock the I2C_DEV_LOCK register
+    Wire.beginTransmission(currAddress);
+    Wire.write(I2C_DEV_LOCK);
+    Wire.write(I2CDL_KEY_UNLOCK, 3);
+    Wire.endTransmission();
+    
+    //change the I2C_ADDR_DM register to newAddress
+    Wire.beginTransmission(currAddress);
+    Wire.write(I2C_ADDR_DM);
+    Wire.write(newAddress);
+    Wire.endTransmission();
+    
+    //lock register again for change to take effect
+    Wire.beginTransmission(currAddress);
+    Wire.write(I2C_DEV_LOCK);
+    Wire.write(I2CDL_KEY_LOCK, 3);
+    Wire.endTransmission();
+    // the I2C address is now newAddress
+}
+
 void setup()
 {
   Wire.begin();
-  
-  // Joe/s code
-  // set pin modes
-  pinMode(xres, OUTPUT);
-  
-  // chip #1: put into reset mode
-  digitalWrite(xres, HIGH);
-  delay(100);
-
-    // let the chip #1 wake up again
-    digitalWrite(xres, LOW);
-    delay(200);
-
-    // chip #1: switch to setup mode
-    Wire.beginTransmission(I2C_ADDR0);
-    Wire.write(COMMAND_REG);
-    Wire.write(0x08);
-    Wire.endTransmission();
-
-    // chip #1: setup CS_ENABLE0 register
-    Wire.beginTransmission(I2C_ADDR0);
-    Wire.write(CS_ENABLE0);
-    Wire.write(B00001111);
-    Wire.endTransmission();
-
-    // chip #1: setup CS_ENABLE1 register
-    Wire.beginTransmission(I2C_ADDR0);
-    Wire.write(CS_ENABLE1);
-    Wire.write(B00001111);
-    Wire.endTransmission();
-
-    // chip #1: switch to normal mode
-    Wire.beginTransmission(I2C_ADDR0);
-    Wire.write(COMMAND_REG);
-    Wire.write(0x07);
-    Wire.endTransmission();
-  
-
   Serial.begin(9600);
   Serial.println("\nI2C Scanner");
-  
 
+  // set reset pin modes
+  pinMode(xres1, OUTPUT);
+  pinMode(xres2, OUTPUT);
+
+  // put both reset mode
+  digitalWrite(xres1, HIGH);
+  delay(100);
+  digitalWrite(xres2, HIGH);
+  delay(100);
+
+  // wake up chip 2 and change its address
+  digitalWrite(xres2, LOW);
+  delay(200);
+  configureChip(I2C_ADDR0);
+  changeAddress(I2C_ADDR0, I2C_ADDR1);
+  
+  // wake up chip 1
+  digitalWrite(xres1, LOW);
+  delay(200);
+  configureChip(I2C_ADDR0);
+
+
+
+  
+  
 }
 
 
@@ -106,9 +146,9 @@ void loop()
   
   
   nDevices = 0;
-  for(address = 0; address < 1; address++ ) 
+  for(address = 0; address < 128; address++ ) 
   {
-    Serial.println(address);
+    // Serial.println(address);
     // The i2c_scanner uses the return value of
     // the Write.endTransmisstion to see if
     // a device did acknowledge to the address.
