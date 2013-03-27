@@ -18,3 +18,4 @@ Column 7:  SDA
 
 XRES:  Connect directly
 
+Note that the middle chip's XRES pin is lousy:  I must fix it tomorrow

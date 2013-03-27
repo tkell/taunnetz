@@ -27,11 +27,10 @@
 
 
 // Joe's code
-// SOMETHING ABOUT PIN 13 IS SPECIAL.  
-// It is apparently connected to the led, and may have another resistor.  Must read up on it and how to xres these chips
+// MIDDLE CHIP's XRES pin is bad. Must fix tomorrow
 
-int xres1 = 12;  // XRES pin on one of the CY8C201xx chips is connected to Arduino pin 13
-int xres2 = 13;  // XRES pin on one of the CY8C201xx chips is connected to Arduino pin 12
+int xres1 = 12;  // XRES pin on one of the CY8C201xx chips is connected to Arduino pin 12
+int xres2 = 2;  // XRES pin on one of the CY8C201xx chips is connected to Arduino pin 8
 
 // I2C adresses
 #define I2C_ADDR0 0x00
@@ -83,7 +82,8 @@ void configureChip(int address) {
 
 // Change the I2C address of a chip
 void changeAddress(int currAddress, int newAddress) {
-    Serial.println("Changing address");
+    byte error;
+    
      // unlock the I2C_DEV_LOCK register
     Wire.beginTransmission(currAddress);
     Wire.write(I2C_DEV_LOCK);
@@ -94,7 +94,9 @@ void changeAddress(int currAddress, int newAddress) {
     Wire.beginTransmission(currAddress);
     Wire.write(I2C_ADDR_DM);
     Wire.write(newAddress);
-    Wire.endTransmission();
+    error = Wire.endTransmission();
+    Serial.print("Changing address:  ");
+    Serial.println(error);
     
     //lock register again for change to take effect
     Wire.beginTransmission(currAddress);
@@ -113,6 +115,7 @@ void setup()
   // set reset pin modes
   pinMode(xres1, OUTPUT);
   pinMode(xres2, OUTPUT);
+  delay(100);
 
   // put both reset mode
   digitalWrite(xres1, HIGH);

@@ -41,7 +41,8 @@ Q16n16 frequency;
 
 
 // Touch code
-int xres = 13;  // XRES pin on one of the CY8C201xx chips is connected to Arduino pin 13
+int xres1 = 12;  // XRES pin on one of the CY8C201xx chips is connected to Arduino pin 13
+int xres2 = 13;  // XRES pin on one of the CY8C201xx chips is connected to Arduino pin 13
 
 // I2C adresses
 #define I2C_ADDR0 0x00
@@ -94,6 +95,7 @@ void configureChip(int address) {
 
 // Change the I2C address of a chip
 void changeAddress(int currAddress, int newAddress) {
+    byte error;
      // unlock the I2C_DEV_LOCK register
     Wire.beginTransmission(currAddress);
     Wire.write(I2C_DEV_LOCK);
@@ -104,7 +106,9 @@ void changeAddress(int currAddress, int newAddress) {
     Wire.beginTransmission(currAddress);
     Wire.write(I2C_ADDR_DM);
     Wire.write(newAddress);
-    Wire.endTransmission();
+    error = Wire.endTransmission();
+    Serial.print("Changed address:  ");
+    Serial.println(error);
     
     //lock register again for change to take effect
     Wire.beginTransmission(currAddress);
@@ -123,28 +127,33 @@ void setup() {
   Wire.begin();
   
   // set pin modes
-  pinMode(xres, OUTPUT);
+  pinMode(xres1, OUTPUT);
+  pinMode(xres2, OUTPUT);
   
   // chip #1: put into reset mode
-  digitalWrite(xres, HIGH);
+  digitalWrite(xres1, HIGH);
   delay(100);
+  // chip #2: put into reset mode
+  digitalWrite(xres2, HIGH);
+  delay(100);
+  
+  // let the chip #2 wake up again
+  digitalWrite(xres2, LOW);
+  delay(200);
   
   // Configure "chip 2"
   Serial.println("chip 2:  ");
   configureChip(I2C_ADDR0);  
-  // OK, so this is failing.  None of my attempted wire commands are sending.
-  // Is this because I have the address wrong?  Or because I am not connected correctly?
   changeAddress(I2C_ADDR0, I2C_ADDR1);
 
   // let the chip #1 wake up again
-  digitalWrite(xres, LOW);
+  digitalWrite(xres1, LOW);
   delay(200);
 
   // configure chip 1
   Serial.println("chip 1:  ");
   configureChip(I2C_ADDR0);
 
-    
   Serial.println("Finished touch setup");
   
   
@@ -165,12 +174,12 @@ void loop() {
   byte touchData;
 
   touchData = readTouch(I2C_ADDR0); 
-  Serial.print("Touch:  ");
+  Serial.print("Touch 1:  ");
   Serial.println(touchData, BIN);
   
   // This will crash
   touchData = readTouch(I2C_ADDR1); 
-  Serial.print("Touch:  ");
+  Serial.print("Touch 2:  ");
   Serial.println(touchData, BIN);
 }
 
