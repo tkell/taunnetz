@@ -41,12 +41,14 @@ Q16n16 frequency;
 
 
 // Touch code
-int xres1 = 2;  // XRES pin on one of the CY8C201xx chips is connected to Arduino pin 13
-int xres2 = 3;  // XRES pin on one of the CY8C201xx chips is connected to Arduino pin 13
+int xres1 = 2;  // XRES pin on one of the CY8C201xx chips is connected to Arduino pin 2
+int xres2 = 3;  // XRES pin on one of the CY8C201xx chips is connected to Arduino pin 3
+int xres3 = 4;  // XRES pin on one of the CY8C201xx chips is connected to Arduino pin 4
 
 // I2C adresses
 #define I2C_ADDR0 0x00
 #define I2C_ADDR1 0x01
+#define I2C_ADDR2 0x02
 
 // some CY8C201xx registers
 #define INPUT_PORT0 0x00
@@ -129,13 +131,22 @@ void setup() {
   // set reset pin modes
   pinMode(xres1, OUTPUT);
   pinMode(xres2, OUTPUT);
+  pinMode(xres3, OUTPUT);
   delay(100);
 
-  // put both reset mode
+  // put all into reset mode
   digitalWrite(xres1, HIGH);
   delay(100);
   digitalWrite(xres2, HIGH);
   delay(100);
+  digitalWrite(xres3, HIGH);
+  delay(100);
+  
+  // wake up chip 2 and change its address
+  digitalWrite(xres3, LOW);
+  delay(200);
+  configureChip(I2C_ADDR0);
+  changeAddress(I2C_ADDR0, I2C_ADDR2);
 
   // wake up chip 2 and change its address
   digitalWrite(xres2, LOW);
@@ -171,9 +182,13 @@ void loop() {
   Serial.print("Touch 1:  ");
   Serial.println(touchData, BIN);
   
-  // This will crash
   touchData = readTouch(I2C_ADDR1); 
   Serial.print("Touch 2:  ");
+  Serial.println(touchData, BIN);
+  
+  // This might crash
+  touchData = readTouch(I2C_ADDR2); 
+  Serial.print("Touch 3:  ");
   Serial.println(touchData, BIN);
 }
 
