@@ -29,8 +29,8 @@
 // Joe's code
 // MIDDLE CHIP's XRES pin is bad. Must fix tomorrow
 
-int xres1 = 12;  // XRES pin on one of the CY8C201xx chips is connected to Arduino pin 12
-int xres2 = 2;  // XRES pin on one of the CY8C201xx chips is connected to Arduino pin 8
+int xres1 = 2;  // XRES pin on one of the CY8C201xx chips is connected to Arduino pin 12
+int xres2 = 3;  // XRES pin on one of the CY8C201xx chips is connected to Arduino pin 8
 
 // I2C adresses
 #define I2C_ADDR0 0x00

@@ -41,8 +41,8 @@ Q16n16 frequency;
 
 
 // Touch code
-int xres1 = 12;  // XRES pin on one of the CY8C201xx chips is connected to Arduino pin 13
-int xres2 = 13;  // XRES pin on one of the CY8C201xx chips is connected to Arduino pin 13
+int xres1 = 2;  // XRES pin on one of the CY8C201xx chips is connected to Arduino pin 13
+int xres2 = 3;  // XRES pin on one of the CY8C201xx chips is connected to Arduino pin 13
 
 // I2C adresses
 #define I2C_ADDR0 0x00
@@ -126,32 +126,26 @@ void setup() {
   //start I2C bus
   Wire.begin();
   
-  // set pin modes
+  // set reset pin modes
   pinMode(xres1, OUTPUT);
   pinMode(xres2, OUTPUT);
-  
-  // chip #1: put into reset mode
+  delay(100);
+
+  // put both reset mode
   digitalWrite(xres1, HIGH);
   delay(100);
-  // chip #2: put into reset mode
   digitalWrite(xres2, HIGH);
   delay(100);
-  
-  // let the chip #2 wake up again
+
+  // wake up chip 2 and change its address
   digitalWrite(xres2, LOW);
   delay(200);
-  
-  // Configure "chip 2"
-  Serial.println("chip 2:  ");
-  configureChip(I2C_ADDR0);  
+  configureChip(I2C_ADDR0);
   changeAddress(I2C_ADDR0, I2C_ADDR1);
-
-  // let the chip #1 wake up again
+  
+  // wake up chip 1
   digitalWrite(xres1, LOW);
   delay(200);
-
-  // configure chip 1
-  Serial.println("chip 1:  ");
   configureChip(I2C_ADDR0);
 
   Serial.println("Finished touch setup");
