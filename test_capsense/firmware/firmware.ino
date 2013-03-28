@@ -118,12 +118,11 @@ void changeAddress(int currAddress, int newAddress) {
 
 void setup() {
   // start serial interface
-  Serial.begin(9600);
+  //Serial.begin(9600);
   
   //start I2C bus
   Wire.begin();
   
-<<<<<<< HEAD
   // set reset pin modes
   pinMode(xres1, OUTPUT);
   pinMode(xres2, OUTPUT);
@@ -155,13 +154,13 @@ void setup() {
   delay(200);
   configureChip(I2C_ADDR0);
 
-  Serial.println("Finished touch setup");
+  //Serial.println("Finished touch setup");
 
   startMozzi(CONTROL_RATE);
   for (int i = 0; i < NUMBER_OSCS; i++) {
     newButtons[i] = 0;
   }
-  Serial.println("Finished Mozzi setup");
+  //Serial.println("Finished Mozzi setup");
 }
 
 void loop() {
@@ -210,7 +209,6 @@ void updateControl() {
   touchData = readTouch(I2C_ADDR2); // get the touch values from 1 x CY8C201xx chips - GP0 are the higher bits, GP1 the lower
   pitchArray = {76, 76, 76, 76, 76, 76, 76, 76};
   oscIndex = playNotes(touchData, oscIndex, pitchArray);
- 
   
   // Turn off any unused oscillators
   for (oscIndex; oscIndex < NUMBER_OSCS; oscIndex++) {
