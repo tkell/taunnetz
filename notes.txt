@@ -3,11 +3,10 @@ Analog 4 is SDA - Analog 5 is SCL.
 
 We can connect multiple devices to these two pins, but we need to ground all of them.
 
-
 Remember that running the serial port fucks with the audio output!!!
 
 The datasheet:  http://www.cypress.com/?docID=41804
-
+Remember that I am NOT using GP0[4] or GP1[4] - I only have 8 outs per chip
 
 Protoboard layout:
 
@@ -16,6 +15,5 @@ Column 3:  Ground
 Column 5:  SCL
 Column 7:  SDA
 
-XRES:  Connect directly
+XRES:  Connect directly, one needed for each chip!
 
-Note that the middle chip's XRES pin is lousy:  I must fix it tomorrow

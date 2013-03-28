@@ -1,4 +1,4 @@
-// Cypress touch code via Joe, with deep thanks to Av for helping me with harwdware
+// Cypress touch code via Joe, with deep thanks to Av, Ian, and Hackon for helping me with harwdware
 
 #include <Wire.h>
 
@@ -11,11 +11,10 @@
 #include <tables/triangle_warm8192_int8.h>
 
 // Synthesis code
-#define CONTROL_RATE 128
+#define CONTROL_RATE 64
 #define NUMBER_OSCS 12
 
 byte newButtons[NUMBER_OSCS];
-byte oldButtons[NUMBER_OSCS];
 
 // Amazingly shitty need to declare every osc by hand
 Oscil <TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> osc1(TRIANGLE_WARM8192_DATA);
@@ -35,10 +34,7 @@ Oscil<TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> *oscs[NUMBER_OSCS] = {
     &osc1, &osc2, &osc3, &osc4, &osc5, &osc6, &osc7, &osc8, &osc9, &osc10, &osc11, &osc12
   };
 
-EventDelay <CONTROL_RATE> eventDelay;
-int noteIndex = 0;
 Q16n16 frequency;
-
 
 // Touch code
 int xres1 = 2;  // XRES pin on one of the CY8C201xx chips is connected to Arduino pin 2
@@ -65,9 +61,8 @@ byte I2CDL_KEY_LOCK[3] = {0x96, 0x5A, 0xC3};
 
 // Set a chip up so we can read its register
 void configureChip(int address) {
-  
   byte error;
-  
+
   // switch to setup mode
   Wire.beginTransmission(address);
   Wire.write(COMMAND_REG);
@@ -128,6 +123,7 @@ void setup() {
   //start I2C bus
   Wire.begin();
   
+<<<<<<< HEAD
   // set reset pin modes
   pinMode(xres1, OUTPUT);
   pinMode(xres2, OUTPUT);
@@ -142,7 +138,7 @@ void setup() {
   digitalWrite(xres3, HIGH);
   delay(100);
   
-  // wake up chip 2 and change its address
+  // wake up chip 3 and change its address
   digitalWrite(xres3, LOW);
   delay(200);
   configureChip(I2C_ADDR0);
@@ -160,43 +156,67 @@ void setup() {
   configureChip(I2C_ADDR0);
 
   Serial.println("Finished touch setup");
-  
-  
-  //startMozzi(CONTROL_RATE);
+
+  startMozzi(CONTROL_RATE);
   for (int i = 0; i < NUMBER_OSCS; i++) {
     newButtons[i] = 0;
   }
-  //Serial.println("Finished Mozzi setup");
-  
-    
+  Serial.println("Finished Mozzi setup");
 }
-
-
-
 
 void loop() {
-  
-  byte touchData;
-
-  touchData = readTouch(I2C_ADDR0); 
-  Serial.print("Touch 1:  ");
-  Serial.println(touchData, BIN);
-  
-  touchData = readTouch(I2C_ADDR1); 
-  Serial.print("Touch 2:  ");
-  Serial.println(touchData, BIN);
-  
-  // This might crash
-  touchData = readTouch(I2C_ADDR2); 
-  Serial.print("Touch 3:  ");
-  Serial.println(touchData, BIN);
+ audioHook();
 }
 
-void updateControl(){
+
+int playNotes(byte touchData, int oscIndex, int frequencies[]) {
+  byte mask;
+  int freqIndex = 0;
+  
+  for (mask = 00000001; mask > 0; mask <<= 1) {
+    if (oscIndex >= NUMBER_OSCS) { 
+      break;
+    }
+    if (touchData & mask) {
+      frequency = Q16n16_mtof(Q16n0_to_Q16n16(frequencies[freqIndex]));
+      oscs[oscIndex]->setFreq_Q16n16(frequency);  
+      newButtons[oscIndex] = 1;
+      oscIndex++;
+    }
+    freqIndex++;
+  }
+  
+  return oscIndex;
+}
+
+void updateControl() {
   byte touchData;
   byte mask;
-}
+  int oscIndex = 0;
+  int pitchArray[8];
+  
+  //Serial.print("Touch:  ");
+  //Serial.println(touchData, BIN);
 
+  // For 3 chips
+  touchData = readTouch(I2C_ADDR0); // get the touch values from 1 x CY8C201xx chips - GP0 are the higher bits, GP1 the lower
+  pitchArray = {69, 69, 69, 69, 69, 69, 69, 69};
+  oscIndex = playNotes(touchData, oscIndex, pitchArray);
+
+  touchData = readTouch(I2C_ADDR1); // get the touch values from 1 x CY8C201xx chips - GP0 are the higher bits, GP1 the lower
+  pitchArray = {72, 72, 72, 72, 72, 72, 72, 72};
+  oscIndex = playNotes(touchData, oscIndex, pitchArray);
+
+  touchData = readTouch(I2C_ADDR2); // get the touch values from 1 x CY8C201xx chips - GP0 are the higher bits, GP1 the lower
+  pitchArray = {76, 76, 76, 76, 76, 76, 76, 76};
+  oscIndex = playNotes(touchData, oscIndex, pitchArray);
+ 
+  
+  // Turn off any unused oscillators
+  for (oscIndex; oscIndex < NUMBER_OSCS; oscIndex++) {
+    newButtons[oscIndex] = 0;
+  }
+}
 
 int updateAudio(){
   int asig = 0;
@@ -205,8 +225,8 @@ int updateAudio(){
       asig = asig + oscs[i]->next();
     }
   }
-
-  return asig >> 1;
+  //  >> 3 works for 1-3 oscs.  Will need to solve this later
+  return asig >> 3;
 }
 
 
