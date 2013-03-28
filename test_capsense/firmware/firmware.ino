@@ -199,15 +199,15 @@ void updateControl() {
 
   // For 3 chips
   touchData = readTouch(I2C_ADDR0); // get the touch values from 1 x CY8C201xx chips - GP0 are the higher bits, GP1 the lower
-  pitchArray = {69, 69, 69, 69, 69, 69, 69, 69};
+  pitchArray = {60, 61, 62, 63, 64, 65, 66, 67};
   oscIndex = playNotes(touchData, oscIndex, pitchArray);
 
   touchData = readTouch(I2C_ADDR1); // get the touch values from 1 x CY8C201xx chips - GP0 are the higher bits, GP1 the lower
-  pitchArray = {72, 72, 72, 72, 72, 72, 72, 72};
+  pitchArray = {68, 69, 70, 71, 72, 73, 74, 75};
   oscIndex = playNotes(touchData, oscIndex, pitchArray);
 
   touchData = readTouch(I2C_ADDR2); // get the touch values from 1 x CY8C201xx chips - GP0 are the higher bits, GP1 the lower
-  pitchArray = {76, 76, 76, 76, 76, 76, 76, 76};
+  pitchArray = {76, 77, 78, 79, 80, 81, 82, 83};
   oscIndex = playNotes(touchData, oscIndex, pitchArray);
   
   // Turn off any unused oscillators
