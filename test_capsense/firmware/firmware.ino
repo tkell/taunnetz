@@ -134,14 +134,14 @@ void setup() {
   delay(100);
   digitalWrite(xres2, HIGH);
   delay(100);
-  //digitalWrite(xres3, HIGH);
-  //delay(100);
+  digitalWrite(xres3, HIGH);
+  delay(100);
   
   // wake up chip 3 and change its address
-  //digitalWrite(xres3, LOW);
-  //delay(200);
-  //configureChip(I2C_ADDR0);
-  //changeAddress(I2C_ADDR0, I2C_ADDR2);
+  digitalWrite(xres3, LOW);
+  delay(200);
+  configureChip(I2C_ADDR0);
+  changeAddress(I2C_ADDR0, I2C_ADDR2);
 
   // wake up chip 2 and change its address
   digitalWrite(xres2, LOW);
@@ -212,9 +212,9 @@ void updateControl() {
   //Serial.print("Touch 2:  ");
   //Serial.println(touchData, BIN);
 
-  //touchData = readTouch(I2C_ADDR2); // get the touch values from 1 x CY8C201xx chips - GP0 are the higher bits, GP1 the lower
-  //pitchArray = {76, 77, 78, 79, 80, 81, 82, 83};
-  //oscIndex = playNotes(touchData, oscIndex, pitchArray);
+  touchData = readTouch(I2C_ADDR2); // get the touch values from 1 x CY8C201xx chips - GP0 are the higher bits, GP1 the lower
+  pitchArray = {76, 77, 78, 79, 80, 81, 82, 83};
+  oscIndex = playNotes(touchData, oscIndex, pitchArray);
   
   //Serial.print("Touch 3:  ");
   //Serial.println(touchData, BIN);
