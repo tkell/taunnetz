@@ -68,8 +68,8 @@ void configureChip(int address) {
   Wire.write(COMMAND_REG);
   Wire.write(0x08);
   error = Wire.endTransmission();
-  Serial.print("Switched to setup mode:  ");
-  Serial.println(error);
+  //Serial.print("Switched to setup mode:  ");
+  //Serial.println(error);
 
   // setup CS_ENABLE0 register
   Wire.beginTransmission(address);
@@ -118,7 +118,7 @@ void changeAddress(int currAddress, int newAddress) {
 
 void setup() {
   // start serial interface
-  Serial.begin(9600);
+  //Serial.begin(9600);
   
   //start I2C bus
   Wire.begin();
@@ -134,15 +134,15 @@ void setup() {
   delay(100);
   digitalWrite(xres2, HIGH);
   delay(100);
-  //digitalWrite(xres3, HIGH);
-  //delay(100);
+  digitalWrite(xres3, HIGH);
+  delay(100);
   
   // wake up chip 3 and change its address
-//  digitalWrite(xres3, LOW);
-//  delay(200);
-//  configureChip(I2C_ADDR0);
-//  changeAddress(I2C_ADDR0, I2C_ADDR2);
-//
+  digitalWrite(xres3, LOW);
+  delay(200);
+  configureChip(I2C_ADDR0);
+  changeAddress(I2C_ADDR0, I2C_ADDR2);
+
   // wake up chip 2 and change its address
   digitalWrite(xres2, LOW);
   delay(200);
@@ -202,16 +202,22 @@ void updateControl() {
   pitchArray = {60, 61, 62, 63, 64, 65, 66, 67};
   oscIndex = playNotes(touchData, oscIndex, pitchArray);
   
-  //Serial.print("Touch:  ");
+  //Serial.print("Touch 1:  ");
   //Serial.println(touchData, BIN);
 
   touchData = readTouch(I2C_ADDR1); // get the touch values from 1 x CY8C201xx chips - GP0 are the higher bits, GP1 the lower
   pitchArray = {68, 69, 70, 71, 72, 73, 74, 75};
   oscIndex = playNotes(touchData, oscIndex, pitchArray);
-//
-//  touchData = readTouch(I2C_ADDR2); // get the touch values from 1 x CY8C201xx chips - GP0 are the higher bits, GP1 the lower
-//  pitchArray = {76, 77, 78, 79, 80, 81, 82, 83};
-//  oscIndex = playNotes(touchData, oscIndex, pitchArray);
+  
+  //Serial.print("Touch 2:  ");
+  //Serial.println(touchData, BIN);
+
+  touchData = readTouch(I2C_ADDR2); // get the touch values from 1 x CY8C201xx chips - GP0 are the higher bits, GP1 the lower
+  pitchArray = {76, 77, 78, 79, 80, 81, 82, 83};
+  oscIndex = playNotes(touchData, oscIndex, pitchArray);
+  
+  //Serial.print("Touch 3:  ");
+  //Serial.println(touchData, BIN);
   
   // Turn off any unused oscillators
   for (oscIndex; oscIndex < NUMBER_OSCS; oscIndex++) {
