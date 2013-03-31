@@ -8,6 +8,8 @@ Remember that running the serial port fucks with the audio output!!!
 The datasheet:  http://www.cypress.com/?docID=41804
 Remember that I am NOT using GP0[4] or GP1[4] - I only have 8 outs per chip
 
+I may need to drop register 2 of chip 2:  it is not reliable.
+
 XRES:  Connect directly, one needed for each chip!
 
 Final layouts, if we use six chips
@@ -29,3 +31,47 @@ Eb-G, F#-Bb-D, F#-Bb-D  {63, 67, 66, 58, 62, 66, 58, 62};
 A-C#-F, A-C#-F, E-Ab    {69, 73, 77, 69, 73, 77, 76, 80};
 C, E-Ab-C, B-Eb-G, B    {72, 76, 80, 72, 71, 75, 79, 71};
 Eb-G, F#-Bb-D, F#-Bb-D  {75, 79, 78, 70, 74, 78, 70, 74};
+
+
+
+
+PUTTING THINGS INSIDE THE TUBE.
+
+I need to mount both boards, the arduino, and the battery.  How can I do this?
+- First I should glue the boards together
+- Glue?  foam to the bottom of the boards + dunio?
+- I need a battery case too.
+
+I need a switch for the battery.
+An LED would be nice.  
+The ardunino USB should come out of one end, as should the switch and LED
+The speaker should come out the other end.
+
+
+ORDER OF OPERATIONS
+
+- Finalize the Xres header and wires:  solder the wires on  
+- Finalize the power/ground and i2c headers:  solder the wires on
+- This will keep the arduino close to its final location, at the foot of the tube.
+- Glue protoboards together.
+-
+
+I need to thread in each final-wire, and solder it to the correct resistor.  (I may need to trim the resistors.)
+Then I need to test that.  
+
+I need to mount the boards inside. 
+I need to GENTLY pull each write through, clip it, and tape it down.
+
+I need to get my amps.
+I need to attach the amps to the speaker.
+I need to solder long wires to the amp, and attach them to a header.
+I need to test this header and amp
+I need to mount the speaker on the far end. How can I do this?
+- Glue?  
+- I need to mount the amp near the speaker.  I might be able to just have it hang, as it is tiny.
+I need to connect the header to the arduino
+
+
+Then, I need to print another cover, and attach it.
+
+Then I need a drink.
