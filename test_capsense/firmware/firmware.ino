@@ -232,34 +232,50 @@ void updateControl() {
   
   //Serial.print("Touch:  ");
   //Serial.println(touchData, BIN);
+  
+  // I think I may need to tweak my pitch sets to match my wriing comments...
 
   // For 6 chips
   touchData = readTouch(I2C_ADDR0); // get the touch values from 1 x CY8C201xx chips - GP0 are the higher bits, GP1 the lower
-  pitchArray = {60, 61, 62, 63, 64, 65, 66, 67};
+  // So this is GP0:  0, 1, 2, 3 - GP1:  0, 1, 2, 3
+  pitchArray = {57, 61, 65, 57, 61, 65, 64, 68};;  // A-C#-F, A-C#-F, E-Ab
   oscIndex = playNotes(touchData, oscIndex, pitchArray);
+  // GP0-0:  A.  GP0-1:  C#.  GP0-2:  F.  GP0-3:  A.  GP1-0:  C#.  GP1-1:  F
+  // GP1-2:  E.  GP1-3:  Ab
   
-  //Serial.print("Touch 1:  ");
-  //Serial.println(touchData, BIN);
-
-  touchData = readTouch(I2C_ADDR1); // get the touch values from 1 x CY8C201xx chips - GP0 are the higher bits, GP1 the lower
-  pitchArray = {68, 69, 70, 71, 72, 73, 74, 75};
+  touchData = readTouch(I2C_ADDR1);
+  pitchArray = {60, 64, 68, 60, 59, 63, 67, 59}; // C, E-Ab-C, B-Eb-G, B    
   oscIndex = playNotes(touchData, oscIndex, pitchArray);
+  // GP0-0:  C.  GP0-1:  E.  GP0-2:  Ab.  GP0-3:  C.  
+  // GP1-0:  B.  GP1-1:  Eb.  GP1-2:  G.  GP1-3:  B
   
-  touchData = readTouch(I2C_ADDR2); // get the touch values from 1 x CY8C201xx chips - GP0 are the higher bits, GP1 the lower
-  pitchArray = {76, 77, 78, 79, 80, 81, 82, 83};
+  touchData = readTouch(I2C_ADDR2);
+  pitchArray = {63, 67, 66, 58, 62, 66, 58, 62};;  // Eb-G, F#-Bb-D, F#-Bb-D  
   oscIndex = playNotes(touchData, oscIndex, pitchArray);
-    
-  touchData = readTouch(I2C_ADDR3); // get the touch values from 1 x CY8C201xx chips - GP0 are the higher bits, GP1 the lower
-  pitchArray = {60, 61, 62, 63, 64, 65, 66, 67};
+  // GP0-0:  Eb.  GP0-1:  G.  
+  // GP0-2:  F#.  GP0-3:  Bb.  GP1-0:  D.  GP1-1:  F#.  GP1-2:  Bb.  GP1-3:  D
+   
+   
+  // Wired.   
+  touchData = readTouch(I2C_ADDR3);
+  pitchArray = {69, 73, 77, 69, 73, 77, 76, 80};  //  A-C#-F, A-C#-F, E-Ab    
   oscIndex = playNotes(touchData, oscIndex, pitchArray);
+  // GP0-0:  A.  GP0-1:  C#.  GP0-2:  F.  GP0-3:  A.  GP1-0:  C#.  GP1-1:  F
+  // GP1-2:  E.  GP1-3:  Ab
 
-  touchData = readTouch(I2C_ADDR4); // get the touch values from 1 x CY8C201xx chips - GP0 are the higher bits, GP1 the lower
-  pitchArray = {68, 69, 70, 71, 72, 73, 74, 75};
+  // Wired.
+  touchData = readTouch(I2C_ADDR4);
+  pitchArray = {72, 76, 80, 72, 71, 75, 79, 71};  // C, E-Ab-C, B-Eb-G, B    
   oscIndex = playNotes(touchData, oscIndex, pitchArray);
+  // GP0-0:  C.  GP0-1:  E.  GP0-2:  Ab.  GP0-3:  C.  
+  // GP1-0:  B.  GP1-1:  Eb.  GP1-2:  G.  GP1-3:  B
 
-  touchData = readTouch(I2C_ADDR5); // get the touch values from 1 x CY8C201xx chips - GP0 are the higher bits, GP1 the lower
-  pitchArray = {76, 77, 78, 79, 80, 81, 82, 83};
+  // Wired. 
+  touchData = readTouch(I2C_ADDR5);
+  pitchArray = {75, 79, 78, 70, 74, 78, 70, 74};  // Eb-G, F#-Bb-D, F#-Bb-D  
   oscIndex = playNotes(touchData, oscIndex, pitchArray);
+  // GP0-0:  Eb.  GP0-1:  G.  
+  // GP0-2:  F#.  GP0-3:  Bb.  GP1-0:  D.  GP1-1:  F#.  GP1-2:  Bb.  GP1-3:  D
 
   // Turn off any unused oscillators
   for (oscIndex; oscIndex < NUMBER_OSCS; oscIndex++) {

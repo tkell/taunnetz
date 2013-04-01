@@ -50,12 +50,6 @@ The speaker should come out the other end.
 
 ORDER OF OPERATIONS
 
-- Finalize the Xres header and wires:  solder the wires on  
-- Finalize the power/ground and i2c headers:  solder the wires on
-- This will keep the arduino close to its final location, at the foot of the tube.
-- Glue protoboards together.
--
-
 I need to thread in each final-wire, and solder it to the correct resistor.  (I may need to trim the resistors.)
 Then I need to test that.  
 
