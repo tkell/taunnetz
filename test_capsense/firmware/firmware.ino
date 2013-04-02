@@ -239,38 +239,34 @@ void updateControl() {
   touchData = readTouch(I2C_ADDR0); // get the touch values from 1 x CY8C201xx chips - GP0 are the higher bits, GP1 the lower
   // So this is GP0:  0, 1, 2, 3 - GP1:  0, 1, 2, 3
   pitchArray = {57, 61, 65, 57, 61, 65, 64, 68};;  // A-C#-F, A-C#-F, E-Ab
-  oscIndex = playNotes(touchData, oscIndex, pitchArray);
+  //oscIndex = playNotes(touchData, oscIndex, pitchArray);
   // GP0-0:  A.  GP0-1:  C#.  GP0-2:  F.  GP0-3:  A.  GP1-0:  C#.  GP1-1:  F
   // GP1-2:  E.  GP1-3:  Ab
   
   touchData = readTouch(I2C_ADDR1);
   pitchArray = {60, 64, 68, 60, 59, 63, 67, 59}; // C, E-Ab-C, B-Eb-G, B    
-  oscIndex = playNotes(touchData, oscIndex, pitchArray);
+  //oscIndex = playNotes(touchData, oscIndex, pitchArray);
   // GP0-0:  C.  GP0-1:  E.  GP0-2:  Ab.  GP0-3:  C.  
   // GP1-0:  B.  GP1-1:  Eb.  GP1-2:  G.  GP1-3:  B
   
   touchData = readTouch(I2C_ADDR2);
   pitchArray = {63, 67, 66, 58, 62, 66, 58, 62};;  // Eb-G, F#-Bb-D, F#-Bb-D  
-  oscIndex = playNotes(touchData, oscIndex, pitchArray);
+  //oscIndex = playNotes(touchData, oscIndex, pitchArray);
   // GP0-0:  Eb.  GP0-1:  G.  
   // GP0-2:  F#.  GP0-3:  Bb.  GP1-0:  D.  GP1-1:  F#.  GP1-2:  Bb.  GP1-3:  D
    
-   
-  // Wired.   
   touchData = readTouch(I2C_ADDR3);
   pitchArray = {69, 73, 77, 69, 73, 77, 76, 80};  //  A-C#-F, A-C#-F, E-Ab    
-  oscIndex = playNotes(touchData, oscIndex, pitchArray);
+  //oscIndex = playNotes(touchData, oscIndex, pitchArray);
   // GP0-0:  A.  GP0-1:  C#.  GP0-2:  F.  GP0-3:  A.  GP1-0:  C#.  GP1-1:  F
   // GP1-2:  E.  GP1-3:  Ab
 
-  // Wired.
   touchData = readTouch(I2C_ADDR4);
   pitchArray = {72, 76, 80, 72, 71, 75, 79, 71};  // C, E-Ab-C, B-Eb-G, B    
-  oscIndex = playNotes(touchData, oscIndex, pitchArray);
+  //oscIndex = playNotes(touchData, oscIndex, pitchArray);
   // GP0-0:  C.  GP0-1:  E.  GP0-2:  Ab.  GP0-3:  C.  
   // GP1-0:  B.  GP1-1:  Eb.  GP1-2:  G.  GP1-3:  B
 
-  // Wired. 
   touchData = readTouch(I2C_ADDR5);
   pitchArray = {75, 79, 78, 70, 74, 78, 70, 74};  // Eb-G, F#-Bb-D, F#-Bb-D  
   oscIndex = playNotes(touchData, oscIndex, pitchArray);
