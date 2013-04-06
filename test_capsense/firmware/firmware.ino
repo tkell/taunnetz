@@ -13,7 +13,10 @@
 #define CONTROL_RATE 64
 #define NUMBER_OSCS 12
 
-byte newButtons[NUMBER_OSCS];
+byte newOscs[NUMBER_OSCS];
+byte oldTouchData;
+byte olderTouchData;
+byte oldestTouchData;
 
 // Amazingly shitty need to declare every osc by hand
 Oscil <TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> osc1(TRIANGLE_WARM8192_DATA);
@@ -129,6 +132,10 @@ void setup() {
   // start serial interface
   Serial.begin(9600);
   
+  oldTouchData = 0;
+  olderTouchData = 0;
+  oldestTouchData = 0;
+  
   //start I2C bus
   Wire.begin();
   
@@ -194,7 +201,7 @@ void setup() {
 
   startMozzi(CONTROL_RATE);
   for (int i = 0; i < NUMBER_OSCS; i++) {
-    newButtons[i] = 0;
+    newOscs[i] = 0;
   }
   //Serial.println("Finished Mozzi setup");
 }
@@ -215,7 +222,7 @@ int playNotes(byte touchData, int oscIndex, int frequencies[]) {
     if (touchData & mask) {
       frequency = Q16n16_mtof(Q16n0_to_Q16n16(frequencies[freqIndex]));
       oscs[oscIndex]->setFreq_Q16n16(frequency);  
-      newButtons[oscIndex] = 1;
+      newOscs[oscIndex] = 1;
       oscIndex++;
     }
     freqIndex++;
@@ -226,6 +233,7 @@ int playNotes(byte touchData, int oscIndex, int frequencies[]) {
 
 void updateControl() {
   byte touchData;
+  byte newData;
   byte mask;
   int oscIndex = 0;
   int pitchArray[8];
@@ -238,7 +246,7 @@ void updateControl() {
   // For 6 chips
   touchData = readTouch(I2C_ADDR0); // get the touch values from 1 x CY8C201xx chips - GP0 are the higher bits, GP1 the lower
   // So this is GP0:  0, 1, 2, 3 - GP1:  0, 1, 2, 3
-  pitchArray = {57, 61, 65, 57, 61, 65, 64, 68};;  // A-C#-F, A-C#-F, E-Ab
+  pitchArray = {57, 61, 65, 57, 61, 65, 64, 68};  // A-C#-F, A-C#-F, E-Ab
   //oscIndex = playNotes(touchData, oscIndex, pitchArray);
   // GP0-0:  A.  GP0-1:  C#.  GP0-2:  F.  GP0-3:  A.  GP1-0:  C#.  GP1-1:  F
   // GP1-2:  E.  GP1-3:  Ab
@@ -250,7 +258,7 @@ void updateControl() {
   // GP1-0:  B.  GP1-1:  Eb.  GP1-2:  G.  GP1-3:  B
   
   touchData = readTouch(I2C_ADDR2);
-  pitchArray = {63, 67, 66, 58, 62, 66, 58, 62};;  // Eb-G, F#-Bb-D, F#-Bb-D  
+  pitchArray = {63, 67, 66, 58, 62, 66, 58, 62};  // Eb-G, F#-Bb-D, F#-Bb-D  
   //oscIndex = playNotes(touchData, oscIndex, pitchArray);
   // GP0-0:  Eb.  GP0-1:  G.  
   // GP0-2:  F#.  GP0-3:  Bb.  GP1-0:  D.  GP1-1:  F#.  GP1-2:  Bb.  GP1-3:  D
@@ -268,21 +276,30 @@ void updateControl() {
   // GP1-0:  B.  GP1-1:  Eb.  GP1-2:  G.  GP1-3:  B
 
   touchData = readTouch(I2C_ADDR5);
+  // this is a billion times better, but still ain't perfect.  
+  // maybe one more, tomorrow?
+  newData = touchData & oldTouchData & olderTouchData & oldestTouchData;
+  Serial.println(newData);
+  
+  oldestTouchData = olderTouchData;
+  olderTouchData = oldTouchData;
+  oldTouchData = touchData;
+  
   pitchArray = {75, 79, 78, 70, 74, 78, 70, 74};  // Eb-G, F#-Bb-D, F#-Bb-D  
-  oscIndex = playNotes(touchData, oscIndex, pitchArray);
+  //oscIndex = playNotes(newData, oscIndex, pitchArray);
   // GP0-0:  Eb.  GP0-1:  G.  
   // GP0-2:  F#.  GP0-3:  Bb.  GP1-0:  D.  GP1-1:  F#.  GP1-2:  Bb.  GP1-3:  D
 
   // Turn off any unused oscillators
   for (oscIndex; oscIndex < NUMBER_OSCS; oscIndex++) {
-    newButtons[oscIndex] = 0;
+    newOscs[oscIndex] = 0;
   }
 }
 
 int updateAudio(){
   int asig = 0;
   for (int i = 0; i < NUMBER_OSCS; i++) {
-    if (newButtons[i] != 0) {
+    if (newOscs[i] != 0) {
       asig = asig + oscs[i]->next();
     }
   }

@@ -49,9 +49,12 @@ The speaker should come out the other end.
 
 
 ORDER OF OPERATIONS
-
-I need to thread in each final-wire, and solder it to the correct resistor.  (I may need to trim the resistors.)
 Then I need to test that.  
+- MASSIVE INTERFERENCE.
+- Is this caused by the tape?  Does not seem to be
+- Is this caused by the mass of wire?
+- Is this caused by lack of ground?  I must ask someone on Thursday.
+- Joe says that setting them up properly will help.  Hrmmm.
 
 I need to mount the boards inside. 
 I need to GENTLY pull each write through, clip it, and tape it down.
