@@ -10,13 +10,13 @@
 #include <tables/triangle_warm8192_int8.h>
 
 // Synthesis code
-#define CONTROL_RATE 64
+#define CONTROL_RATE 128
 #define NUMBER_OSCS 12
+#define NUMBER_CONDITIONS 8
 
 byte newOscs[NUMBER_OSCS];
-byte oldTouchData;
-byte olderTouchData;
-byte oldestTouchData;
+
+byte conditionData6[NUMBER_CONDITIONS];
 
 // Amazingly shitty need to declare every osc by hand
 Oscil <TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> osc1(TRIANGLE_WARM8192_DATA);
@@ -132,10 +132,6 @@ void setup() {
   // start serial interface
   Serial.begin(9600);
   
-  oldTouchData = 0;
-  olderTouchData = 0;
-  oldestTouchData = 0;
-  
   //start I2C bus
   Wire.begin();
   
@@ -197,6 +193,11 @@ void setup() {
   delay(200);
   configureChip(I2C_ADDR0);
 
+  
+  for (int i = 0; i < NUMBER_CONDITIONS; i++) {
+    conditionData6[i] = 0;
+  }
+  
   //Serial.println("Finished touch setup");
 
   startMozzi(CONTROL_RATE);
@@ -278,12 +279,19 @@ void updateControl() {
   touchData = readTouch(I2C_ADDR5);
   // this is a billion times better, but still ain't perfect.  
   // maybe one more, tomorrow?
-  newData = touchData & oldTouchData & olderTouchData & oldestTouchData;
+  
+  // AND the data together
+  newData = touchData;
+  for (int i = 0; i < NUMBER_CONDITIONS; i++) {
+   newData = newData & conditionData6[i];
+  }
   Serial.println(newData);
   
-  oldestTouchData = olderTouchData;
-  olderTouchData = oldTouchData;
-  oldTouchData = touchData;
+  // Update the data.  WARNING:  REVERSE FOR LOOP
+  for (int i = NUMBER_CONDITIONS - 1; i > 0; i--) {
+    conditionData6[i] = conditionData6[i - 1];
+  }
+  conditionData6[0] = touchData;
   
   pitchArray = {75, 79, 78, 70, 74, 78, 70, 74};  // Eb-G, F#-Bb-D, F#-Bb-D  
   //oscIndex = playNotes(newData, oscIndex, pitchArray);
