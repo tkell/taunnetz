@@ -13,10 +13,10 @@
 #define CONTROL_RATE 128
 #define NUMBER_OSCS 12
 #define NUMBER_CONDITIONS 8
+#define NUMBER_CHIPS 6
 
 byte newOscs[NUMBER_OSCS];
-
-byte conditionData6[NUMBER_CONDITIONS];
+byte conditionData[NUMBER_CHIPS][NUMBER_CONDITIONS];
 
 // Amazingly shitty need to declare every osc by hand
 Oscil <TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> osc1(TRIANGLE_WARM8192_DATA);
@@ -193,9 +193,11 @@ void setup() {
   delay(200);
   configureChip(I2C_ADDR0);
 
-  
-  for (int i = 0; i < NUMBER_CONDITIONS; i++) {
-    conditionData6[i] = 0;
+  // Initialize the conditioning arrays
+  for (int i = 0; i < NUMBER_CHIPS; i++) {
+    for (int j = 0; j < NUMBER_CONDITIONS; j++) {
+      conditionData[i][j] = 0;
+    }  
   }
   
   //Serial.println("Finished touch setup");
@@ -246,6 +248,8 @@ void updateControl() {
 
   // For 6 chips
   touchData = readTouch(I2C_ADDR0); // get the touch values from 1 x CY8C201xx chips - GP0 are the higher bits, GP1 the lower
+  touchData = conditionTouchData(touchData, 0);
+  //Serial.println(touchData);
   // So this is GP0:  0, 1, 2, 3 - GP1:  0, 1, 2, 3
   pitchArray = {57, 61, 65, 57, 61, 65, 64, 68};  // A-C#-F, A-C#-F, E-Ab
   //oscIndex = playNotes(touchData, oscIndex, pitchArray);
@@ -253,50 +257,45 @@ void updateControl() {
   // GP1-2:  E.  GP1-3:  Ab
   
   touchData = readTouch(I2C_ADDR1);
+  touchData = conditionTouchData(touchData, 1);
+  //Serial.println(touchData);
   pitchArray = {60, 64, 68, 60, 59, 63, 67, 59}; // C, E-Ab-C, B-Eb-G, B    
   //oscIndex = playNotes(touchData, oscIndex, pitchArray);
   // GP0-0:  C.  GP0-1:  E.  GP0-2:  Ab.  GP0-3:  C.  
   // GP1-0:  B.  GP1-1:  Eb.  GP1-2:  G.  GP1-3:  B
   
   touchData = readTouch(I2C_ADDR2);
+  touchData = conditionTouchData(touchData, 2);
+  //Serial.println(touchData);
   pitchArray = {63, 67, 66, 58, 62, 66, 58, 62};  // Eb-G, F#-Bb-D, F#-Bb-D  
   //oscIndex = playNotes(touchData, oscIndex, pitchArray);
   // GP0-0:  Eb.  GP0-1:  G.  
   // GP0-2:  F#.  GP0-3:  Bb.  GP1-0:  D.  GP1-1:  F#.  GP1-2:  Bb.  GP1-3:  D
    
   touchData = readTouch(I2C_ADDR3);
+  touchData = conditionTouchData(touchData, 3);
+  //Serial.println(touchData);
   pitchArray = {69, 73, 77, 69, 73, 77, 76, 80};  //  A-C#-F, A-C#-F, E-Ab    
   //oscIndex = playNotes(touchData, oscIndex, pitchArray);
   // GP0-0:  A.  GP0-1:  C#.  GP0-2:  F.  GP0-3:  A.  GP1-0:  C#.  GP1-1:  F
   // GP1-2:  E.  GP1-3:  Ab
 
   touchData = readTouch(I2C_ADDR4);
+  touchData = conditionTouchData(touchData, 4);
+  //Serial.println(touchData);
   pitchArray = {72, 76, 80, 72, 71, 75, 79, 71};  // C, E-Ab-C, B-Eb-G, B    
   //oscIndex = playNotes(touchData, oscIndex, pitchArray);
   // GP0-0:  C.  GP0-1:  E.  GP0-2:  Ab.  GP0-3:  C.  
   // GP1-0:  B.  GP1-1:  Eb.  GP1-2:  G.  GP1-3:  B
 
   touchData = readTouch(I2C_ADDR5);
-  // this is a billion times better, but still ain't perfect.  
-  // maybe one more, tomorrow?
-  
-  // AND the data together
-  newData = touchData;
-  for (int i = 0; i < NUMBER_CONDITIONS; i++) {
-   newData = newData & conditionData6[i];
-  }
-  Serial.println(newData);
-  
-  // Update the data.  WARNING:  REVERSE FOR LOOP
-  for (int i = NUMBER_CONDITIONS - 1; i > 0; i--) {
-    conditionData6[i] = conditionData6[i - 1];
-  }
-  conditionData6[0] = touchData;
-  
+  touchData = conditionTouchData(touchData, 5);
+  //Serial.println(touchData);
   pitchArray = {75, 79, 78, 70, 74, 78, 70, 74};  // Eb-G, F#-Bb-D, F#-Bb-D  
-  //oscIndex = playNotes(newData, oscIndex, pitchArray);
+  //oscIndex = playNotes(touchData, oscIndex, pitchArray);
   // GP0-0:  Eb.  GP0-1:  G.  
   // GP0-2:  F#.  GP0-3:  Bb.  GP1-0:  D.  GP1-1:  F#.  GP1-2:  Bb.  GP1-3:  D
+
 
   // Turn off any unused oscillators
   for (oscIndex; oscIndex < NUMBER_OSCS; oscIndex++) {
@@ -339,5 +338,23 @@ byte readTouch(int address) {
   
   touch |= Wire.read();
   return touch;
+}
+
+
+byte conditionTouchData(byte touchData, int index) {
+  byte newData;
+  newData = touchData;
+  // AND the data together
+  for (int i = 0; i < NUMBER_CONDITIONS; i++) {
+   newData = newData & conditionData[index][i];
+  }
+    
+  // Update the data.  WARNING:  REVERSE FOR LOOP
+  for (int i = NUMBER_CONDITIONS - 1; i > 0; i--) {
+    conditionData[index][i] = conditionData[index][i - 1];
+  }
+  conditionData[index][0] = touchData;
+  
+ return newData; 
 }
 

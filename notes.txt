@@ -51,15 +51,20 @@ The speaker should come out the other end.
 ORDER OF OPERATIONS
 Then I need to test that.  
 - MASSIVE INTERFERENCE.
-- Is this caused by the tape?  Does not seem to be
-- Is this caused by the mass of wire?
-- Is this caused by lack of ground?  I must ask someone on Thursday.
-- Joe says that setting them up properly will help.  Hrmmm.
+- Nope, still massive interference, and even some non-working buttons.
 
-I need to mount the boards inside. 
-I need to GENTLY pull each write through, clip it, and tape it down.
+SOLUTION:
+- Cut tube in half, VERY CAREFULLY.
+- Place boards inside, on foam maybe, and run wires to everthing. 
+- MAKE SURE THAT THE WIRES OVERLAP AS LITTLE AS POSSIBLE:  shorten, tape down, etc
+- Solder any new wires to resistors
+- Test!
+- REMOVE lower/original layer of paper
+- I need to GENTLY pull each write through, clip it, and tape it down.
+- TEST, board by board
+- Glue boards down
 
-I need to get my amps.
+
 I need to attach the amps to the speaker.
 I need to solder long wires to the amp, and attach them to a header.
 I need to test this header and amp
@@ -68,6 +73,8 @@ I need to mount the speaker on the far end. How can I do this?
 - I need to mount the amp near the speaker.  I might be able to just have it hang, as it is tiny.
 I need to connect the header to the arduino
 
+- make switch for the batter, attach it and to the far side
+- GLue pipe back together, pray
 
 Then, I need to print another cover, and attach it.
 
