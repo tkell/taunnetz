@@ -4,16 +4,15 @@
 
 #include <MozziGuts.h>
 #include <Oscil.h>
-#include <EventDelay.h>
 #include <mozzi_midi.h>
 #include <fixedMath.h> // for Q16n16 fixed-point fractional number type
 #include <tables/triangle_warm8192_int8.h>
 
 // Synthesis code
-#define CONTROL_RATE 128
-#define NUMBER_OSCS 12
-#define NUMBER_CONDITIONS 4 // More than 16 ruins my day
-#define NOISE_THRESH 0x72  // 0x28 is factory default, 0x50 was working well, 0x72 was working great, 0xAA felt a little slow
+#define CONTROL_RATE 64 // 64 seems better than 128, 32 does not work
+#define NUMBER_OSCS 6 // cold change this, really
+#define NUMBER_CONDITIONS 4 // 4 works well.  More than 16 ruins my day.  May cut this totally?
+#define NOISE_THRESH 0x96  // 0x28 is factory default, 0x50 was working well, 0x72 was working great, 0xAA felt a little slow
 #define NUMBER_CHIPS 6
 
 byte newOscs[NUMBER_OSCS];
@@ -34,10 +33,11 @@ Oscil <TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> osc11(TRIANGLE_WARM8192_DATA);
 Oscil <TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> osc12(TRIANGLE_WARM8192_DATA);
 
 Oscil<TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> *oscs[NUMBER_OSCS] = {
-    &osc1, &osc2, &osc3, &osc4, &osc5, &osc6, &osc7, &osc8, &osc9, &osc10, &osc11, &osc12
+    &osc1, &osc2, &osc3, &osc4, &osc5, &osc6
   };
 
 Q16n16 frequency;
+int pitchArray[8];
 
 // Touch code
 int xres1 = 2;  
@@ -78,32 +78,32 @@ void configureChip(int address) {
   Wire.write(COMMAND_REG);
   Wire.write(0x08);
   error = Wire.endTransmission();
-  Serial.print("Switched to setup mode:  ");
-  Serial.println(error);
+  //Serial.print("Switched to setup mode:  ");
+  //Serial.println(error);
 
   // setup CS_ENABLE0 register
   Wire.beginTransmission(address);
   Wire.write(CS_ENABLE0);
   Wire.write(B00001111);
   error = Wire.endTransmission();
-  Serial.print("Enabled R1:  ");
-  Serial.println(error);
+  //Serial.print("Enabled R1:  ");
+  //Serial.println(error);
 
   // setup CS_ENABLE1 register
   Wire.beginTransmission(address);
   Wire.write(CS_ENABLE1);
   Wire.write(B00001111);
   error = Wire.endTransmission();
-  Serial.print("Enabled R2:  ");
-  Serial.println(error);
+  //Serial.print("Enabled R2:  ");
+  //Serial.println(error);
     
   // Increase the noise threshold
   Wire.beginTransmission(address);
   Wire.write(CS_NOISE_TH);
   Wire.write(NOISE_THRESH); // Factory default is 0x28
   error = Wire.endTransmission();
-  Serial.print("Increased Noise Threshold:  ");
-  Serial.println(error);
+  //Serial.print("Increased Noise Threshold:  ");
+  //Serial.println(error);
 
   // switch to normal mode
   Wire.beginTransmission(address);
@@ -126,8 +126,8 @@ void changeAddress(int currAddress, int newAddress) {
     Wire.write(I2C_ADDR_DM);
     Wire.write(newAddress);
     error = Wire.endTransmission();
-    Serial.print("Changed address:  ");
-    Serial.println(error);
+    //Serial.print("Changed address:  ");
+    //Serial.println(error);
     
     //lock register again for change to take effect
     Wire.beginTransmission(currAddress);
@@ -211,12 +211,14 @@ void setup() {
   }
   
   //Serial.println("Finished touch setup");
-
-  startMozzi(CONTROL_RATE);
   for (int i = 0; i < NUMBER_OSCS; i++) {
     newOscs[i] = 0;
   }
+  pitchArray = {57, 61, 65, 57, 61, 65, 64, 68};
+
+  delay(250);
   //Serial.println("Finished Mozzi setup");
+  startMozzi(CONTROL_RATE);
 }
 
 void loop() {
@@ -244,50 +246,52 @@ int playNotes(byte touchData, int oscIndex, int frequencies[]) {
   return oscIndex;
 }
 
+void updateWombatControl(){
+  // put changing controls in here
+}
+
 void updateControl() {
-  byte touchData;
-  byte newData;
-  byte mask;
-  int oscIndex = 0;
-  int pitchArray[8];
+  byte touchData = 0;
+  int oscIndex = 0; 
 
   // For 6 chips
-  touchData = readTouch(I2C_ADDR0); // get the touch values from 1 x CY8C201xx chips - GP0 are the higher bits, GP1 the lower
-  touchData = conditionTouchData(touchData, 0);
+  //touchData = readTouch(I2C_ADDR0); // get the touch values from 1 x CY8C201xx chips - GP0 are the higher bits, GP1 the lower
+  //touchData = conditionTouchData(touchData, 0);
+  //touchData = 7;
   //Serial.println(touchData, BIN);
   // So this is GP0:  0, 1, 2, 3 - GP1:  0, 1, 2, 3
   // I am re-writing based on proximity, so EACH of these will be different.  Sorry.
-  pitchArray = {57, 61, 65, 57, 61, 65, 64, 68};  // A-C#-F, A-C#-F, E-Ab
+  // A-C#-F, A-C#-F, E-Ab
   //oscIndex = playNotes(touchData, oscIndex, pitchArray);
   
-  touchData = readTouch(I2C_ADDR1);
-  touchData = conditionTouchData(touchData, 1);
+  //touchData = readTouch(I2C_ADDR1);
+  //touchData = conditionTouchData(touchData, 1);
   //Serial.println(touchData, BIN);
-  pitchArray = {60, 64, 68, 60, 59, 63, 67, 59}; // C, E-Ab-C, B-Eb-G, B    
+  //pitchArray = {60, 64, 68, 60, 59, 63, 67, 59}; // C, E-Ab-C, B-Eb-G, B    
   //oscIndex = playNotes(touchData, oscIndex, pitchArray);
   
-  touchData = readTouch(I2C_ADDR2);
-  touchData = conditionTouchData(touchData, 2);
+  //touchData = readTouch(I2C_ADDR2);
+  //touchData = conditionTouchData(touchData, 2);
   //Serial.println(touchData, BIN);
-  pitchArray = {63, 67, 66, 58, 62, 66, 58, 62};  // Eb-G, F#-Bb-D, F#-Bb-D  
+  //pitchArray = {63, 67, 66, 58, 62, 66, 58, 62};  // Eb-G, F#-Bb-D, F#-Bb-D  
   //oscIndex = playNotes(touchData, oscIndex, pitchArray);
    
-  touchData = readTouch(I2C_ADDR3);
-  touchData = conditionTouchData(touchData, 3);
+  //touchData = readTouch(I2C_ADDR3);
+  //touchData = conditionTouchData(touchData, 3);
   //Serial.println(touchData, BIN);
-  pitchArray = {69, 73, 77, 69, 73, 77, 76, 80};  //  A-C#-F, A-C#-F, E-Ab    
+  //pitchArray = {69, 73, 77, 69, 73, 77, 76, 80};  //  A-C#-F, A-C#-F, E-Ab    
   //oscIndex = playNotes(touchData, oscIndex, pitchArray);
 
-  touchData = readTouch(I2C_ADDR4);
-  touchData = conditionTouchData(touchData, 4);
+  //touchData = readTouch(I2C_ADDR4);
+  //touchData = conditionTouchData(touchData, 4);
   //Serial.println(touchData, BIN);
-  pitchArray = {72, 76, 80, 72, 71, 75, 79, 71};  // C, E-Ab-C, B-Eb-G, B    
+  //pitchArray = {72, 76, 80, 72, 71, 75, 79, 71};  // C, E-Ab-C, B-Eb-G, B    
   //oscIndex = playNotes(touchData, oscIndex, pitchArray);
 
-  touchData = readTouch(I2C_ADDR5);
-  touchData = conditionTouchData(touchData, 5);
-  // Serial.println(touchData, BIN);
-  pitchArray = {75, 79, 78, 70, 74, 78, 70, 74};  // Eb-G, F#-Bb-D, F#-Bb-D  
+  //touchData = readTouch(I2C_ADDR5);
+  //touchData = conditionTouchData(touchData, 5);
+  //Serial.println(touchData, BIN);
+  //pitchArray = {75, 79, 78, 70, 74, 78, 70, 74};  // Eb-G, F#-Bb-D, F#-Bb-D  
   //oscIndex = playNotes(touchData, oscIndex, pitchArray);
 
   // Turn off any unused oscillators

@@ -1,4 +1,4 @@
-For I2C:
+xFor I2C:
 Analog 4 is SDA - Analog 5 is SCL.
 
 We can connect multiple devices to these two pins, but we need to ground all of them.
@@ -48,17 +48,21 @@ The speaker should come out the other end.
 
 ORDER OF OPERATIONS
 - TEST, board by board:  VICTORY (solved by increasing the noise threshold on the chips)
-- Glue boards down, or hold 'em in place somehow?
-
-I need to attach the amps to the speaker.
-I need to solder long wires to the amp, and attach them to a header.
-I need to test this header and amp
-I need to mount the speaker on the far end. How can I do this?
+-I need to mount the speaker on the far end. How can I do this?
 - Glue?  
 - I need to mount the amp near the speaker.  I might be able to just have it hang, as it is tiny.
-I need to connect the header to the arduino
 
-- Glue pipe back together, pray.
+- PROBLEM:  it turns out that doing too many things in UpdateControl creates insane noise.
+- Not even.  It turns out that making wire. calls in UpdateControl creates insane noise. Shit.
+- OK:  the more calls to wire that you have, the worse it is.
+- I need to make a serial-sending version and make or find a nice PD or Chuck synth for it.
+
+- Then I need to wrestle with getting this on-board audio to pop:  I could make it single touch with chords?
+- Touching two buttons, regarless of board, causes the distortion.
+- 
+
+- Glue the boards in place, somehow
+- More tape to hold the pipe back together, pray.
 
 Then, I need to print another cover, and attach it.
 
