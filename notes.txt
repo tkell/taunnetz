@@ -47,15 +47,8 @@ The speaker should come out the other end.
 
 
 ORDER OF OPERATIONS
-Then I need to test that.  
-- MASSIVE INTERFERENCE.
-- Nope, still massive interference, and even some non-working buttons.
-
-SOLUTION:  You have to cut the tube
-- MAKE SURE THAT THE WIRES OVERLAP AS LITTLE AS POSSIBLE:  shorten, tape down, etc
-- TEST, board by board:  total failure.  The interference is somehow worse than it was before.  Beg Joe / Av / Ian for help on Monday?
-- Glue boards down, or hold 'em in place somehow
-
+- TEST, board by board:  VICTORY (solved by increasing the noise threshold on the chips)
+- Glue boards down, or hold 'em in place somehow?
 
 I need to attach the amps to the speaker.
 I need to solder long wires to the amp, and attach them to a header.
@@ -65,8 +58,7 @@ I need to mount the speaker on the far end. How can I do this?
 - I need to mount the amp near the speaker.  I might be able to just have it hang, as it is tiny.
 I need to connect the header to the arduino
 
-- make switch for the batter, attach it and to the far side
-- GLue pipe back together, pray
+- Glue pipe back together, pray.
 
 Then, I need to print another cover, and attach it.
 

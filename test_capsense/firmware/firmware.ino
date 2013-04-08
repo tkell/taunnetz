@@ -12,7 +12,8 @@
 // Synthesis code
 #define CONTROL_RATE 128
 #define NUMBER_OSCS 12
-#define NUMBER_CONDITIONS 16 // More than 16 ruins my day
+#define NUMBER_CONDITIONS 4 // More than 16 ruins my day
+#define NOISE_THRESH 0x72  // 0x28 is factory default, 0x50 was working well, 0x72 was working great, 0xAA felt a little slow
 #define NUMBER_CHIPS 6
 
 byte newOscs[NUMBER_OSCS];
@@ -62,6 +63,7 @@ int xres6 = 7;
 #define I2C_DEV_LOCK 0x79
 #define I2C_ADDR_DM 0x7C
 #define COMMAND_REG 0xA0
+#define CS_NOISE_TH 0x4E
 
 // Secret codes for locking/unlocking the I2C_DEV_LOCK register
 byte I2CDL_KEY_UNLOCK[3] = {0x3C, 0xA5, 0x69};
@@ -93,6 +95,14 @@ void configureChip(int address) {
   Wire.write(B00001111);
   error = Wire.endTransmission();
   Serial.print("Enabled R2:  ");
+  Serial.println(error);
+    
+  // Increase the noise threshold
+  Wire.beginTransmission(address);
+  Wire.write(CS_NOISE_TH);
+  Wire.write(NOISE_THRESH); // Factory default is 0x28
+  error = Wire.endTransmission();
+  Serial.print("Increased Noise Threshold:  ");
   Serial.println(error);
 
   // switch to normal mode
@@ -244,7 +254,7 @@ void updateControl() {
   // For 6 chips
   touchData = readTouch(I2C_ADDR0); // get the touch values from 1 x CY8C201xx chips - GP0 are the higher bits, GP1 the lower
   touchData = conditionTouchData(touchData, 0);
-  // Serial.println(touchData, BIN);
+  //Serial.println(touchData, BIN);
   // So this is GP0:  0, 1, 2, 3 - GP1:  0, 1, 2, 3
   // I am re-writing based on proximity, so EACH of these will be different.  Sorry.
   pitchArray = {57, 61, 65, 57, 61, 65, 64, 68};  // A-C#-F, A-C#-F, E-Ab
@@ -252,13 +262,13 @@ void updateControl() {
   
   touchData = readTouch(I2C_ADDR1);
   touchData = conditionTouchData(touchData, 1);
-  // Serial.println(touchData, BIN);
+  //Serial.println(touchData, BIN);
   pitchArray = {60, 64, 68, 60, 59, 63, 67, 59}; // C, E-Ab-C, B-Eb-G, B    
   //oscIndex = playNotes(touchData, oscIndex, pitchArray);
   
   touchData = readTouch(I2C_ADDR2);
   touchData = conditionTouchData(touchData, 2);
-  // Serial.println(touchData, BIN);
+  //Serial.println(touchData, BIN);
   pitchArray = {63, 67, 66, 58, 62, 66, 58, 62};  // Eb-G, F#-Bb-D, F#-Bb-D  
   //oscIndex = playNotes(touchData, oscIndex, pitchArray);
    
@@ -276,7 +286,7 @@ void updateControl() {
 
   touchData = readTouch(I2C_ADDR5);
   touchData = conditionTouchData(touchData, 5);
-  Serial.println(touchData, BIN);
+  // Serial.println(touchData, BIN);
   pitchArray = {75, 79, 78, 70, 74, 78, 70, 74};  // Eb-G, F#-Bb-D, F#-Bb-D  
   //oscIndex = playNotes(touchData, oscIndex, pitchArray);
 
