@@ -12,7 +12,7 @@
 // Synthesis code
 #define CONTROL_RATE 128
 #define NUMBER_OSCS 12
-#define NUMBER_CONDITIONS 16
+#define NUMBER_CONDITIONS 16 // More than 16 ruins my day
 #define NUMBER_CHIPS 6
 
 byte newOscs[NUMBER_OSCS];
@@ -244,7 +244,7 @@ void updateControl() {
   // For 6 chips
   touchData = readTouch(I2C_ADDR0); // get the touch values from 1 x CY8C201xx chips - GP0 are the higher bits, GP1 the lower
   touchData = conditionTouchData(touchData, 0);
-  //Serial.println(touchData, BIN);
+  // Serial.println(touchData, BIN);
   // So this is GP0:  0, 1, 2, 3 - GP1:  0, 1, 2, 3
   // I am re-writing based on proximity, so EACH of these will be different.  Sorry.
   pitchArray = {57, 61, 65, 57, 61, 65, 64, 68};  // A-C#-F, A-C#-F, E-Ab
