@@ -35,6 +35,14 @@ Eb-G, F#-Bb-D, F#-Bb-D  {75, 79, 78, 70, 74, 78, 70, 74};
 
 Note that if you lose a button, it is probably because the resistor has bent and is touching something else.
 
+AFTER-CLASS TODOS:
+-Fix my missing buttons
+- make a six-synth PD thing
+- make my pitchArray
+- Look for a permanent button fix.
+
+- Note that for the pd version, I need to boot the arduino, PD, and then the python connector.
+
 PUTTING THINGS INSIDE THE TUBE.
 I need to mount both boards, the arduino, and the battery.  How can I do this?
 - Glue?  foam to the bottom of the boards + dunio?

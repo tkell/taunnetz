@@ -10,6 +10,8 @@
 
 int pitchArray[NUMBER_CHIPS][8];
 int touchCount;
+int touchArray[NUMBER_TOUCHES];
+String touchString = "";
 
 // Touch code
 int xres1 = 2;  
@@ -197,24 +199,53 @@ void setup() {
   
 }
 
-void getMidi
-
 void loop() {
   byte touchData = 0;
+  byte mask;
+  int index;
+  touchCount = 0;
+  touchString = "";
+  
   // For 6 chips
   for (int i = 0; i < NUMBER_CHIPS; i++) {
-    
-    
     touchData = readTouch(i); // get the touch values from 1 x CY8C201xx chips - GP0 are the higher bits, GP1 the lower
     touchData = conditionTouchData(touchData, i);
+    //Serial.println(touchData, BIN);
+    
     // mask and send the pitch array midi numbers here
-    
-    
-    
-    Serial.println(touchData, BIN);
-    //Serial.write(i);
-    //Serial.write(72);
+    index = 0;
+    for (mask = 00000001; mask > 0; mask <<= 1) {
+      //Serial.println(touchCount);
+      if (touchCount >= NUMBER_TOUCHES) { 
+        break;
+      }
+      if (touchData & mask) {
+        //Serial.println(touchData, BIN);
+        touchArray[touchCount] = pitchArray[i][index];
+        touchString.concat("60,");
+        touchCount++;
+        
+      }
+      index++;
+    }
   }
+  
+  // Fill touchArray with zeros
+  if (touchCount < NUMBER_TOUCHES) {
+   for (int i = touchCount; i < NUMBER_TOUCHES; i++) {
+     touchArray[i] = 0;
+     touchString.concat("00,");
+   }
+  }
+  
+  // Send touchArray
+//  Serial.print('s');
+//  for (int i = touchCount; i < NUMBER_TOUCHES; i++) {
+//     Serial.print(touchArray[i]);
+//  }
+//  Serial.println('e');
+  Serial.println(touchString);
+
 }
 
 
