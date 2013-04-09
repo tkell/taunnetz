@@ -6,8 +6,10 @@
 #define NUMBER_CONDITIONS 2 // 4 works well.  More than 16 ruins my day.  May cut this totally?
 #define NOISE_THRESH 0x72  // 0x28 is factory default, 0x50 was working well, 0x72 was working great, 0xAA felt a little slow
 #define NUMBER_CHIPS 6
+#define NUMBER_TOUCHES 6
 
 int pitchArray[NUMBER_CHIPS][8];
+int touchCount;
 
 // Touch code
 int xres1 = 2;  
@@ -173,6 +175,8 @@ void setup() {
   digitalWrite(xres1, LOW);
   delay(200);
   configureChip(I2C_ADDR0);
+  
+  
 
   // Initialize the conditioning arrays
   for (int i = 0; i < NUMBER_CHIPS; i++) {
@@ -181,18 +185,32 @@ void setup() {
     }  
   }
   
+  touchCount = 0;
+  
   // Initialize the pitch array here
+  // Eventually we'll have to make this custom (pitchArray[i] = {57, 61, etc etc})
+  for (int i = 0; i < NUMBER_CHIPS; i++) {
+    for (int j = 0; j < 8; j++) {
+      pitchArray[i][j] = j + 60;
+    }  
+  }
   
 }
 
+void getMidi
 
 void loop() {
   byte touchData = 0;
   // For 6 chips
   for (int i = 0; i < NUMBER_CHIPS; i++) {
+    
+    
     touchData = readTouch(i); // get the touch values from 1 x CY8C201xx chips - GP0 are the higher bits, GP1 the lower
     touchData = conditionTouchData(touchData, i);
     // mask and send the pitch array midi numbers here
+    
+    
+    
     Serial.println(touchData, BIN);
     //Serial.write(i);
     //Serial.write(72);
