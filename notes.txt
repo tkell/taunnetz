@@ -48,6 +48,7 @@ The speaker should come out the other end.
 
 ORDER OF OPERATIONS
 - TEST, board by board:  VICTORY (solved by increasing the noise threshold on the chips)
+- Lost 4 chips.  Must fix / resolder
 -I need to mount the speaker on the far end. How can I do this?
 - Glue?  
 - I need to mount the amp near the speaker.  I might be able to just have it hang, as it is tiny.
