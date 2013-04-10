@@ -1,16 +1,15 @@
 // Cypress touch code via Joe, with deep thanks to Av, Ian, and Hackon for helping me with harwdware
-// This is the non-Mozzi version:  it sends serial data to some sort of synthesis program
+// This is the non-Mozzi version:  it sends serial data to some sort of synthesis program, via a python bridge.
 
 
 #include <Wire.h>
 #define NUMBER_CONDITIONS 2 // 4 works well.  More than 16 ruins my day.  May cut this totally?
 #define NOISE_THRESH 0x72  // 0x28 is factory default, 0x50 was working well, 0x72 was working great, 0xAA felt a little slow
 #define NUMBER_CHIPS 6
-#define NUMBER_TOUCHES 6
+#define NUMBER_TOUCHES 10
 
-int pitchArray[NUMBER_CHIPS][8];
 int touchCount;
-int touchArray[NUMBER_TOUCHES];
+String pitchArray[NUMBER_CHIPS][8];
 String touchString = "";
 
 // Touch code
@@ -188,15 +187,16 @@ void setup() {
   }
   
   touchCount = 0;
-  
   // Initialize the pitch array here
-  // Eventually we'll have to make this custom (pitchArray[i] = {57, 61, etc etc})
-  for (int i = 0; i < NUMBER_CHIPS; i++) {
-    for (int j = 0; j < 8; j++) {
-      pitchArray[i][j] = j + 60;
-    }  
-  }
-  
+  // Because I wired for short distance, these are out of order!  Sorry!!
+  // 57 - 68
+  pitchArray[0] = {"61", "65", "64", "64", "57", "61", "65", "57"};  // GOLD
+  pitchArray[1] = {"68", "60", "63", "67", "68", "60", "63", "59"};  // GOLD
+  pitchArray[2] = {"67", "59", "58", "62", "62", "66", "66", "58"};  // GOLD
+  // 69 - 80
+  pitchArray[3] = {"69", "77", "73", "73", "69", "77", "80", "76"}; // GOLD
+  pitchArray[4] = {"72", "72", "76", "75", "79", "80", "79", "75"}; // GOLD
+  pitchArray[5] = {"71", "71", "78", "74", "74", "70", "70", "78"}; // GOLD
 }
 
 void loop() {
@@ -207,7 +207,7 @@ void loop() {
   touchString = "";
   
   // For 6 chips
-  for (int i = 0; i < NUMBER_CHIPS; i++) {
+  for (int i = 5; i < 6; i++) {
     touchData = readTouch(i); // get the touch values from 1 x CY8C201xx chips - GP0 are the higher bits, GP1 the lower
     touchData = conditionTouchData(touchData, i);
     //Serial.println(touchData, BIN);
@@ -220,9 +220,9 @@ void loop() {
         break;
       }
       if (touchData & mask) {
-        //Serial.println(touchData, BIN);
-        touchArray[touchCount] = pitchArray[i][index];
-        touchString.concat("60,");
+        Serial.println(index); // DEBUG
+        touchString.concat(pitchArray[i][index]);
+        touchString.concat(",");
         touchCount++;
         
       }
@@ -233,17 +233,10 @@ void loop() {
   // Fill touchArray with zeros
   if (touchCount < NUMBER_TOUCHES) {
    for (int i = touchCount; i < NUMBER_TOUCHES; i++) {
-     touchArray[i] = 0;
      touchString.concat("00,");
    }
   }
-  
-  // Send touchArray
-//  Serial.print('s');
-//  for (int i = touchCount; i < NUMBER_TOUCHES; i++) {
-//     Serial.print(touchArray[i]);
-//  }
-//  Serial.println('e');
+  // Send over serial
   Serial.println(touchString);
 
 }
