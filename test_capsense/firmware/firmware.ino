@@ -3,8 +3,8 @@
 
 
 #include <Wire.h>
-#define NUMBER_CONDITIONS 2 // 4 works well.  More than 16 ruins my day.  May cut this totally?
-#define NOISE_THRESH 0x72  // 0x28 is factory default, 0x50 was working well, 0x72 was working great, 0xAA felt a little slow
+#define NUMBER_CONDITIONS 1 // 4 works well.  More than 16 ruins my day.  May cut this totally?
+#define NOISE_THRESH 0x80  // 0x28 is factory default, 0x50 was working well, 0x72 was working great, 0xAA felt a little slow
 #define NUMBER_CHIPS 6
 #define NUMBER_TOUCHES 10
 
@@ -207,7 +207,7 @@ void loop() {
   touchString = "";
   
   // For 6 chips
-  for (int i = 5; i < 6; i++) {
+  for (int i = 0; i < NUMBER_CHIPS; i++) {
     touchData = readTouch(i); // get the touch values from 1 x CY8C201xx chips - GP0 are the higher bits, GP1 the lower
     touchData = conditionTouchData(touchData, i);
     //Serial.println(touchData, BIN);
@@ -220,7 +220,6 @@ void loop() {
         break;
       }
       if (touchData & mask) {
-        Serial.println(index); // DEBUG
         touchString.concat(pitchArray[i][index]);
         touchString.concat(",");
         touchCount++;
