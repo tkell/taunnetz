@@ -58,7 +58,6 @@ int xres6 = 7;
 #define ACC_IDLE 0
 #define ACC_READING 1
 #define ACC_WRITING 2
-uint8_t tempBuffer[1];
 uint8_t acc_status;
 
 // some CY8C201xx registers.  These may all have to be re-declared as uint8_t
@@ -67,8 +66,8 @@ uint8_t acc_status;
 #define COMMAND_REG 0xA0
 #define CS_NOISE_TH 0x4E
 
-uint8_t INPUT_PORT0 = 0x00;
-uint8_t INPUT_PORT1 = 0x01;
+uint8_t INPUT_PORT0 = 0;
+uint8_t INPUT_PORT1 = 1;
 uint8_t I2C_DEV_LOCK = 0x7;
 uint8_t I2C_ADDR_DM = 0x7C;
 
@@ -152,7 +151,6 @@ void setup() {
   //start twowire
   initialize_twi_nonblock();
   acc_status = ACC_IDLE;
-  tempBuffer[0] = 0;
   
   // set reset pin modes
   pinMode(xres1, OUTPUT);
@@ -266,13 +264,14 @@ int playNotes(byte touchData, int oscIndex, int frequencies[]) {
 
 void initiateTouchRead(uint8_t address) {
   // Looks like we may have to use these
+  txAddress = address;
   txBufferIndex = 0;
   txBufferLength = 0;  
   txBuffer[txBufferIndex] = INPUT_PORT0;
   txBufferIndex++;
   txBufferLength = txBufferIndex;
   
-  twi_initiateWriteTo(address, txBuffer, txBufferLength);
+  twi_initiateWriteTo(txAddress, txBuffer, txBufferLength);
   Serial.print(address); Serial.print(txBuffer[0]); Serial.println(txBufferLength);
   acc_status = ACC_WRITING;
 }
@@ -288,9 +287,9 @@ void initiateTouchRequest(uint8_t address) {
 
 
 void finaliseTouchRequest() {
-  uint8_t read = twi_readMasterBuffer(tempBuffer, 1);
+  uint8_t read = twi_readMasterBuffer(rxBuffer, 1);
   acc_status = ACC_IDLE;
-  Serial.println(tempBuffer[0]);
+  Serial.println(rxBuffer[0]);
 }
 
 
