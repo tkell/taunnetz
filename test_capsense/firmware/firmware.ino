@@ -64,8 +64,6 @@ uint8_t acc_status;
 // some CY8C201xx registers.  These may all have to be re-declared as uint8_t
 #define CS_ENABLE0 0x06
 #define CS_ENABLE1 0x07
-// #define I2C_DEV_LOCK 0x79
-//#define I2C_ADDR_DM 0x7C
 #define COMMAND_REG 0xA0
 #define CS_NOISE_TH 0x4E
 
@@ -87,32 +85,32 @@ void configureChip(int address) {
   twowire_send(COMMAND_REG);
   twowire_send(0x08);
   error = twowire_endTransmission();
-  //Serial.print("Switched to setup mode:  ");
-  //Serial.println(error);
+  Serial.print("Switched to setup mode:  ");
+  Serial.println(error);
 
   // setup CS_ENABLE0 register
   twowire_beginTransmission(address);
   twowire_send(CS_ENABLE0);
   twowire_send(B00001111);
   error = twowire_endTransmission();
-  //Serial.print("Enabled R1:  ");
-  //Serial.println(error);
+  Serial.print("Enabled R1:  ");
+  Serial.println(error);
 
   // setup CS_ENABLE1 register
   twowire_beginTransmission(address);
   twowire_send(CS_ENABLE1);
   twowire_send(B00001111);
   error = twowire_endTransmission();
-  //Serial.print("Enabled R2:  ");
-  //Serial.println(error);
+  Serial.print("Enabled R2:  ");
+  Serial.println(error);
     
   // Increase the noise threshold
   twowire_beginTransmission(address);
   twowire_send(CS_NOISE_TH);
   twowire_send(NOISE_THRESH); // Factory default is 0x28
   error = twowire_endTransmission();
-  //Serial.print("Increased Noise Threshold:  ");
-  //Serial.println(error);
+  Serial.print("Increased Noise Threshold:  ");
+  Serial.println(error);
 
   // switch to normal mode
   twowire_beginTransmission(address);
@@ -135,8 +133,8 @@ void changeAddress(int currAddress, int newAddress) {
     twowire_send(I2C_ADDR_DM);
     twowire_send(newAddress);
     error = twowire_endTransmission();
-    //Serial.print("Changed address:  ");
-    //Serial.println(error);
+    Serial.print("Changed address:  ");
+    Serial.println(error);
     
     //lock register again for change to take effect
     twowire_beginTransmission(currAddress);
@@ -154,6 +152,7 @@ void setup() {
   //start twowire
   initialize_twi_nonblock();
   acc_status = ACC_IDLE;
+  tempBuffer[0] = 0;
   
   // set reset pin modes
   pinMode(xres1, OUTPUT);
@@ -253,10 +252,71 @@ int playNotes(byte touchData, int oscIndex, int frequencies[]) {
   return oscIndex;
 }
 
+// Magic non-blocking touch read stuff.
+// For now we're barely reading anything.
+
+// This is what we're trying to duplicate
+//  Wire.beginTransmission(address);
+//  Wire.write(uint8_t(INPUT_PORT0));
+//  Wire.endTransmission();
+//      
+//  Wire.requestFrom(address, 1);
+//  while (!Wire.available()) {}
+//  touch = Wire.read() << 4;
+
+void initiateTouchRead(uint8_t address) {
+  // Looks like we may have to use these
+  txBufferIndex = 0;
+  txBufferLength = 0;  
+  txBuffer[txBufferIndex] = INPUT_PORT0;
+  txBufferIndex++;
+  txBufferLength = txBufferIndex;
+  
+  twi_initiateWriteTo(address, txBuffer, txBufferLength);
+  Serial.print(address); Serial.print(txBuffer[0]); Serial.println(txBufferLength);
+  acc_status = ACC_WRITING;
+}
+
+
+void initiateTouchRequest(uint8_t address) {
+  txBufferIndex = 0;
+  txBufferLength = 0;
+  
+  uint8_t read = twi_initiateReadFrom(address, 1);
+  acc_status = ACC_READING;
+}
+
+
+void finaliseTouchRequest() {
+  uint8_t read = twi_readMasterBuffer(tempBuffer, 1);
+  acc_status = ACC_IDLE;
+  Serial.println(tempBuffer[0]);
+}
+
 
 void updateControlT2() {
-  byte touchData = 0;
+  uint8_t touchData = 0;
   int oscIndex = 0; 
+  Serial.print("Status:  ");
+  Serial.println(acc_status);
+  //Serial.print("TWI state:  ");
+  //Serial.println(twi_state);
+  
+  switch(acc_status) {
+      case ACC_IDLE:
+	initiateTouchRead(0);
+	break;
+      case ACC_WRITING:
+	if (twi_state != TWI_MRX) {
+	  initiateTouchRequest(0);
+	}
+	break;
+      case ACC_READING:
+	if (twi_state != TWI_MRX) {
+	  finaliseTouchRequest();
+	}
+	break;
+    }
 
   // For 6 chips
   //touchData = readTouch(I2C_ADDR0); // get the touch values from 1 x CY8C201xx chips - GP0 are the higher bits, GP1 the lower
@@ -268,35 +328,6 @@ void updateControlT2() {
   // A-C#-F, A-C#-F, E-Ab
   //oscIndex = playNotes(touchData, oscIndex, pitchArray);
   
-  //touchData = readTouch(I2C_ADDR1);
-  //touchData = conditionTouchData(touchData, 1);
-  //Serial.println(touchData, BIN);
-  //pitchArray = {60, 64, 68, 60, 59, 63, 67, 59}; // C, E-Ab-C, B-Eb-G, B    
-  //oscIndex = playNotes(touchData, oscIndex, pitchArray);
-  
-  //touchData = readTouch(I2C_ADDR2);
-  //touchData = conditionTouchData(touchData, 2);
-  //Serial.println(touchData, BIN);
-  //pitchArray = {63, 67, 66, 58, 62, 66, 58, 62};  // Eb-G, F#-Bb-D, F#-Bb-D  
-  //oscIndex = playNotes(touchData, oscIndex, pitchArray);
-   
-  //touchData = readTouch(I2C_ADDR3);
-  //touchData = conditionTouchData(touchData, 3);
-  //Serial.println(touchData, BIN);
-  //pitchArray = {69, 73, 77, 69, 73, 77, 76, 80};  //  A-C#-F, A-C#-F, E-Ab    
-  //oscIndex = playNotes(touchData, oscIndex, pitchArray);
-
-  //touchData = readTouch(I2C_ADDR4);
-  //touchData = conditionTouchData(touchData, 4);
-  //Serial.println(touchData, BIN);
-  //pitchArray = {72, 76, 80, 72, 71, 75, 79, 71};  // C, E-Ab-C, B-Eb-G, B    
-  //oscIndex = playNotes(touchData, oscIndex, pitchArray);
-
-  //touchData = readTouch(I2C_ADDR5);
-  //touchData = conditionTouchData(touchData, 5);
-  //Serial.println(touchData, BIN);
-  //pitchArray = {75, 79, 78, 70, 74, 78, 70, 74};  // Eb-G, F#-Bb-D, F#-Bb-D  
-  //oscIndex = playNotes(touchData, oscIndex, pitchArray);
 
   // Turn off any unused oscillators
   for (oscIndex; oscIndex < NUMBER_OSCS; oscIndex++) {
@@ -316,23 +347,6 @@ int updateAudioT2(){
 }
 
 
-void initiateTouchRead(uint8_t address) {
-  twi_initiateWriteTo(address, &INPUT_PORT0, 1);
-  acc_status = ACC_WRITING;
-}
-
-
-void initiate_request_accelero(uint8_t address) {
-  uint8_t read = twi_initiateReadFrom(address, 1);
-  acc_status = ACC_READING;
-}
-
-
-uint8_t finalise_request_accelero() {
-  uint8_t read = twi_readMasterBuffer(tempBuffer, 1);
-  acc_status = ACC_IDLE;
-  return tempBuffer[0];
-}
 
 
 byte conditionTouchData(byte touchData, int index) {
