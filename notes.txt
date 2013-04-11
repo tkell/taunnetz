@@ -7,12 +7,9 @@ Remember that running the serial port fucks with the audio output!!!
 
 The datasheet:  http://www.cypress.com/?docID=41804
 Remember that I am NOT using GP0[4] or GP1[4] - I only have 8 outs per chip
-
-I may need to drop register 2 of chip 2:  it is not reliable.
-
 XRES:  Connect directly, one needed for each chip!
 
-Final layouts, if we use six chips
+Final layouts, if we use six chips.  The other branch has working arrays for this.
 A-C#-F:  57, 61, 65
 E-Ab-C:  64, 68, 60
 B-Eb-G:  59, 63, 67
@@ -22,18 +19,6 @@ A-C#-F:  69, 73, 77
 E-Ab-C:  76, 80, 72
 B-Eb-G:  71, 75, 79
 F#-Bb-D: 78, 70, 74
-
-pitchArrays, lowest to highest:  
-A-C#-F, A-C#-F, E-Ab    {57, 61, 65, 57, 61, 65, 64, 68};
-C, E-Ab-C, B-Eb-G, B    {60, 64, 68, 60, 59, 63, 67, 59};
-Eb-G, F#-Bb-D, F#-Bb-D  {63, 67, 66, 58, 62, 66, 58, 62};
-
-A-C#-F, A-C#-F, E-Ab    {69, 73, 77, 69, 73, 77, 76, 80};
-C, E-Ab-C, B-Eb-G, B    {72, 76, 80, 72, 71, 75, 79, 71};
-Eb-G, F#-Bb-D, F#-Bb-D  {75, 79, 78, 70, 74, 78, 70, 74};
-
-
-
 
 PUTTING THINGS INSIDE THE TUBE.
 I need to mount both boards, the arduino, and the battery.  How can I do this?
@@ -53,9 +38,10 @@ ORDER OF OPERATIONS
 - I need to mount the amp near the speaker.  I might be able to just have it hang, as it is tiny.
 
 - PROBLEM:  it turns out that doing too many things in UpdateControl creates insane noise.
-- Not even.  It turns out that making wire. calls in UpdateControl creates insane noise. Shit.
-- OK:  the more calls to wire that you have, the worse it is.
-- I need to make a serial-sending version and make or find a nice PD or Chuck synth for it.
+- Not even.  It turns out that making wire. calls in UpdateControl creates insane noise.  Shit
+- I am currently trying to fix this using a new wire library.  ho ho ho. 
+- First:  be able to set up the chips.
+
 
 - Then I need to wrestle with getting this on-board audio to pop:  I could make it single touch with chords?
 - Touching two buttons, regarless of board, causes the distortion.

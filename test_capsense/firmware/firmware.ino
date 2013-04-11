@@ -1,16 +1,15 @@
-// Cypress touch code via Joe, with deep thanks to Av, Ian, and Hackon for helping me with harwdware
+// Cypress touch code via Joe, with deep thanks to Av, Ian, and Hackon for helping me with hardware.  Mozzi synth via Marcello.
 
-#include <Wire.h>
-
-#include <MozziGuts.h>
+#include <MozziGutsT2.h>
 #include <Oscil.h>
-#include <mozzi_midi.h>
+#include <utils.h>
 #include <fixedMath.h> // for Q16n16 fixed-point fractional number type
 #include <tables/triangle_warm8192_int8.h>
+#include <twi_nonblock.h>
 
 // Synthesis code
 #define CONTROL_RATE 64 // 64 seems better than 128, 32 does not work
-#define NUMBER_OSCS 6 // cold change this, really
+#define NUMBER_OSCS 6 // cuold change this, really
 #define NUMBER_CONDITIONS 4 // 4 works well.  More than 16 ruins my day.  May cut this totally?
 #define NOISE_THRESH 0x96  // 0x28 is factory default, 0x50 was working well, 0x72 was working great, 0xAA felt a little slow
 #define NUMBER_CHIPS 6
@@ -55,85 +54,95 @@ int xres6 = 7;
 #define I2C_ADDR4 0x04
 #define I2C_ADDR5 0x05
 
-// some CY8C201xx registers
-#define INPUT_PORT0 0x00
-#define INPUT_PORT1 0x01
+// Non-blocking globals
+#define ACC_IDLE 0
+#define ACC_READING 1
+#define ACC_WRITING 2
+uint8_t tempBuffer[1];
+uint8_t acc_status;
+
+// some CY8C201xx registers.  These may all have to be re-declared as uint8_t
 #define CS_ENABLE0 0x06
 #define CS_ENABLE1 0x07
-#define I2C_DEV_LOCK 0x79
-#define I2C_ADDR_DM 0x7C
+// #define I2C_DEV_LOCK 0x79
+//#define I2C_ADDR_DM 0x7C
 #define COMMAND_REG 0xA0
 #define CS_NOISE_TH 0x4E
 
+uint8_t INPUT_PORT0 = 0x00;
+uint8_t INPUT_PORT1 = 0x01;
+uint8_t I2C_DEV_LOCK = 0x7;
+uint8_t I2C_ADDR_DM = 0x7C;
+
 // Secret codes for locking/unlocking the I2C_DEV_LOCK register
-byte I2CDL_KEY_UNLOCK[3] = {0x3C, 0xA5, 0x69};
-byte I2CDL_KEY_LOCK[3] = {0x96, 0x5A, 0xC3};
+uint8_t I2CDL_KEY_UNLOCK[3] = {0x3C, 0xA5, 0x69};
+uint8_t I2CDL_KEY_LOCK[3] = {0x96, 0x5A, 0xC3};
 
 // Set a chip up so we can read its register
 void configureChip(int address) {
-  byte error;
+  uint8_t error;
 
   // switch to setup mode
-  Wire.beginTransmission(address);
-  Wire.write(COMMAND_REG);
-  Wire.write(0x08);
-  error = Wire.endTransmission();
+  twowire_beginTransmission(address);
+  twowire_send(COMMAND_REG);
+  twowire_send(0x08);
+  error = twowire_endTransmission();
   //Serial.print("Switched to setup mode:  ");
   //Serial.println(error);
 
   // setup CS_ENABLE0 register
-  Wire.beginTransmission(address);
-  Wire.write(CS_ENABLE0);
-  Wire.write(B00001111);
-  error = Wire.endTransmission();
+  twowire_beginTransmission(address);
+  twowire_send(CS_ENABLE0);
+  twowire_send(B00001111);
+  error = twowire_endTransmission();
   //Serial.print("Enabled R1:  ");
   //Serial.println(error);
 
   // setup CS_ENABLE1 register
-  Wire.beginTransmission(address);
-  Wire.write(CS_ENABLE1);
-  Wire.write(B00001111);
-  error = Wire.endTransmission();
+  twowire_beginTransmission(address);
+  twowire_send(CS_ENABLE1);
+  twowire_send(B00001111);
+  error = twowire_endTransmission();
   //Serial.print("Enabled R2:  ");
   //Serial.println(error);
     
   // Increase the noise threshold
-  Wire.beginTransmission(address);
-  Wire.write(CS_NOISE_TH);
-  Wire.write(NOISE_THRESH); // Factory default is 0x28
-  error = Wire.endTransmission();
+  twowire_beginTransmission(address);
+  twowire_send(CS_NOISE_TH);
+  twowire_send(NOISE_THRESH); // Factory default is 0x28
+  error = twowire_endTransmission();
   //Serial.print("Increased Noise Threshold:  ");
   //Serial.println(error);
 
   // switch to normal mode
-  Wire.beginTransmission(address);
-  Wire.write(COMMAND_REG);
-  Wire.write(0x07);
-  Wire.endTransmission();
+  twowire_beginTransmission(address);
+  twowire_send(COMMAND_REG);
+  twowire_send(0x07);
+  twowire_endTransmission();
 }
 
 // Change the I2C address of a chip
 void changeAddress(int currAddress, int newAddress) {
-    byte error;
+    uint8_t error;
      // unlock the I2C_DEV_LOCK register
-    Wire.beginTransmission(currAddress);
-    Wire.write(I2C_DEV_LOCK);
-    Wire.write(I2CDL_KEY_UNLOCK, 3);
-    Wire.endTransmission();
+    twowire_beginTransmission(currAddress);
+    twowire_send(I2C_DEV_LOCK);
+    twowire_send(I2CDL_KEY_UNLOCK[0]); twowire_send(I2CDL_KEY_UNLOCK[1]); twowire_send(I2CDL_KEY_UNLOCK[2]);
+    twowire_endTransmission();
     
     //change the I2C_ADDR_DM register to newAddress
-    Wire.beginTransmission(currAddress);
-    Wire.write(I2C_ADDR_DM);
-    Wire.write(newAddress);
-    error = Wire.endTransmission();
+    twowire_beginTransmission(currAddress);
+    twowire_send(I2C_ADDR_DM);
+    twowire_send(newAddress);
+    error = twowire_endTransmission();
     //Serial.print("Changed address:  ");
     //Serial.println(error);
     
     //lock register again for change to take effect
-    Wire.beginTransmission(currAddress);
-    Wire.write(I2C_DEV_LOCK);
-    Wire.write(I2CDL_KEY_LOCK, 3);
-    Wire.endTransmission();
+    twowire_beginTransmission(currAddress);
+    twowire_send(I2C_DEV_LOCK);
+    twowire_send(I2CDL_KEY_LOCK[0]); twowire_send(I2CDL_KEY_LOCK[1]); twowire_send(I2CDL_KEY_LOCK[2]);
+    twowire_endTransmission();
     // the I2C address is now newAddress
 }
 
@@ -142,8 +151,9 @@ void setup() {
   // start serial interface
   Serial.begin(9600);
   
-  //start I2C bus
-  Wire.begin();
+  //start twowire
+  initialize_twi_nonblock();
+  acc_status = ACC_IDLE;
   
   // set reset pin modes
   pinMode(xres1, OUTPUT);
@@ -218,12 +228,9 @@ void setup() {
 
   delay(250);
   //Serial.println("Finished Mozzi setup");
-  startMozzi(CONTROL_RATE);
+  startMozziT2(CONTROL_RATE);
 }
 
-void loop() {
- audioHook();
-}
 
 
 int playNotes(byte touchData, int oscIndex, int frequencies[]) {
@@ -246,11 +253,8 @@ int playNotes(byte touchData, int oscIndex, int frequencies[]) {
   return oscIndex;
 }
 
-void updateWombatControl(){
-  // put changing controls in here
-}
 
-void updateControl() {
+void updateControlT2() {
   byte touchData = 0;
   int oscIndex = 0; 
 
@@ -300,7 +304,7 @@ void updateControl() {
   }
 }
 
-int updateAudio(){
+int updateAudioT2(){
   int asig = 0;
   for (int i = 0; i < NUMBER_OSCS; i++) {
     if (newOscs[i] != 0) {
@@ -312,29 +316,22 @@ int updateAudio(){
 }
 
 
-// Touch Code
-byte readTouch(int address) {
-  byte touch = 0;
+void initiateTouchRead(uint8_t address) {
+  twi_initiateWriteTo(address, &INPUT_PORT0, 1);
+  acc_status = ACC_WRITING;
+}
 
-  // request Register 00h: INPUT_PORT0
-  Wire.beginTransmission(address);
-  Wire.write(uint8_t(INPUT_PORT0));
-  Wire.endTransmission();
-      
-  Wire.requestFrom(address, 1);
-  while (!Wire.available()) {}
-  touch = Wire.read() << 4;
-  
-  // request Register 01h: INPUT_PORT1
-  Wire.beginTransmission(address);
-  Wire.write(INPUT_PORT1);
-  Wire.endTransmission();
-  
-  Wire.requestFrom(address, 1);
-  while (!Wire.available()) {}
-  
-  touch |= Wire.read();
-  return touch;
+
+void initiate_request_accelero(uint8_t address) {
+  uint8_t read = twi_initiateReadFrom(address, 1);
+  acc_status = ACC_READING;
+}
+
+
+uint8_t finalise_request_accelero() {
+  uint8_t read = twi_readMasterBuffer(tempBuffer, 1);
+  acc_status = ACC_IDLE;
+  return tempBuffer[0];
 }
 
 
@@ -354,3 +351,33 @@ byte conditionTouchData(byte touchData, int index) {
   
   return newData; 
 }
+
+void loop() {
+ audioHookT2();
+}
+
+// Touch Code
+//byte readTouch(int address) {
+//  uint8_t touch = 0;
+//
+//  // request Register 00h: INPUT_PORT0
+//  Wire.beginTransmission(address);
+//  Wire.write(uint8_t(INPUT_PORT0));
+//  Wire.endTransmission();
+//      
+//  Wire.requestFrom(address, 1);
+//  while (!Wire.available()) {}
+//  touch = Wire.read() << 4;
+//  
+//  // request Register 01h: INPUT_PORT1
+//  Wire.beginTransmission(address);
+//  Wire.write(INPUT_PORT1);
+//  Wire.endTransmission();
+//  
+//  Wire.requestFrom(address, 1);
+//  while (!Wire.available()) {}
+//  
+//  touch |= Wire.read();
+//  return touch;
+//}
+
