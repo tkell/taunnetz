@@ -7,9 +7,10 @@
 #include <tables/triangle_warm8192_int8.h>
 #include <twi_nonblock.h>
 
+
 // Synthesis code
 #define CONTROL_RATE 64 // 64 seems better than 128, 32 does not work
-#define NUMBER_OSCS 6 // cuold change this, really
+#define NUMBER_OSCS 6 // Could change this, really
 #define NUMBER_CONDITIONS 4 // 4 works well.  More than 16 ruins my day.  May cut this totally?
 #define NOISE_THRESH 0x96  // 0x28 is factory default, 0x50 was working well, 0x72 was working great, 0xAA felt a little slow
 #define NUMBER_CHIPS 6
@@ -47,106 +48,109 @@ int xres5 = 6;
 int xres6 = 7;
 
 // I2C adresses
-#define I2C_ADDR0 0x00
+#define I2C_ADDR0 (0x00)
 #define I2C_ADDR1 0x01
 #define I2C_ADDR2 0x02
 #define I2C_ADDR3 0x03
 #define I2C_ADDR4 0x04
-#define I2C_ADDR5 0x05
+#define I2C_ADDR5 (0x05)
 
 // Non-blocking globals
 #define ACC_IDLE 0
 #define ACC_READING 1
 #define ACC_WRITING 2
 uint8_t acc_status;
+uint8_t accbytedata[1];
 
-// some CY8C201xx registers.  These may all have to be re-declared as uint8_t
-#define CS_ENABLE0 0x06
-#define CS_ENABLE1 0x07
-#define COMMAND_REG 0xA0
-#define CS_NOISE_TH 0x4E
-
-uint8_t INPUT_PORT0 = 0;
-uint8_t INPUT_PORT1 = 1;
+// some CY8C201xx registers
+uint8_t INPUT_PORT1 = 0x01;
 uint8_t I2C_DEV_LOCK = 0x7;
 uint8_t I2C_ADDR_DM = 0x7C;
+uint8_t CS_ENABLE0 = 0x06;
+uint8_t CS_ENABLE1 = 0x07;
+uint8_t COMMAND_REG = 0xA0;
+uint8_t CS_NOISE_TH = 0x4E;
 
 // Secret codes for locking/unlocking the I2C_DEV_LOCK register
 uint8_t I2CDL_KEY_UNLOCK[3] = {0x3C, 0xA5, 0x69};
 uint8_t I2CDL_KEY_LOCK[3] = {0x96, 0x5A, 0xC3};
 
+
+uint8_t blockingWrite(uint8_t address, uint8_t reg, byte value) {
+  twowire_beginTransmission(address);
+  twowire_send(reg);
+  twowire_send(value);
+  return twowire_endTransmission();
+}
+
 // Set a chip up so we can read its register
-void configureChip(int address) {
+void configureChip(uint8_t address) {
   uint8_t error;
 
   // switch to setup mode
-  twowire_beginTransmission(address);
-  twowire_send(COMMAND_REG);
-  twowire_send(0x08);
-  error = twowire_endTransmission();
+  error = blockingWrite(address, COMMAND_REG, 0x08);
   Serial.print("Switched to setup mode:  ");
   Serial.println(error);
 
-  // setup CS_ENABLE0 register
-  twowire_beginTransmission(address);
-  twowire_send(CS_ENABLE0);
-  twowire_send(B00001111);
-  error = twowire_endTransmission();
+  // set CS_ENABLE0 register
+  error = blockingWrite(address, CS_ENABLE0, B00001111);
   Serial.print("Enabled R1:  ");
   Serial.println(error);
 
   // setup CS_ENABLE1 register
-  twowire_beginTransmission(address);
-  twowire_send(CS_ENABLE1);
-  twowire_send(B00001111);
-  error = twowire_endTransmission();
+  error = blockingWrite(address, CS_ENABLE1, B00001111);
   Serial.print("Enabled R2:  ");
   Serial.println(error);
     
   // Increase the noise threshold
-  twowire_beginTransmission(address);
-  twowire_send(CS_NOISE_TH);
-  twowire_send(NOISE_THRESH); // Factory default is 0x28
-  error = twowire_endTransmission();
+  error = blockingWrite(address, CS_NOISE_TH, NOISE_THRESH); // Factory default is 0x28
   Serial.print("Increased Noise Threshold:  ");
   Serial.println(error);
 
   // switch to normal mode
-  twowire_beginTransmission(address);
-  twowire_send(COMMAND_REG);
-  twowire_send(0x07);
-  twowire_endTransmission();
+  error = blockingWrite(address, COMMAND_REG, 0x07);
+  Serial.print("Returned to normal mode  :  ");
+  Serial.println(error);
 }
 
 // Change the I2C address of a chip
-void changeAddress(int currAddress, int newAddress) {
+void changeAddress(uint8_t currAddress, uint8_t newAddress) {
     uint8_t error;
-     // unlock the I2C_DEV_LOCK register
-    twowire_beginTransmission(currAddress);
-    twowire_send(I2C_DEV_LOCK);
-    twowire_send(I2CDL_KEY_UNLOCK[0]); twowire_send(I2CDL_KEY_UNLOCK[1]); twowire_send(I2CDL_KEY_UNLOCK[2]);
-    twowire_endTransmission();
+
+    // unlock the I2C_DEV_LOCK register
+    // Trying to send this byte by byte 
+    error = blockingWrite(currAddress, I2C_DEV_LOCK, I2CDL_KEY_UNLOCK[0]);
+    Serial.println(error);
+    
+    error = blockingWrite(currAddress, I2C_DEV_LOCK, I2CDL_KEY_UNLOCK[1]);
+    Serial.println(error);
+    
+    error = blockingWrite(currAddress, I2C_DEV_LOCK, I2CDL_KEY_UNLOCK[2]);
+    Serial.print("Unlocked dev register:  ");
+    Serial.println(error);
     
     //change the I2C_ADDR_DM register to newAddress
-    twowire_beginTransmission(currAddress);
-    twowire_send(I2C_ADDR_DM);
-    twowire_send(newAddress);
-    error = twowire_endTransmission();
+    error = blockingWrite(currAddress, I2C_ADDR_DM, newAddress);
     Serial.print("Changed address:  ");
     Serial.println(error);
     
     //lock register again for change to take effect
-    twowire_beginTransmission(currAddress);
-    twowire_send(I2C_DEV_LOCK);
-    twowire_send(I2CDL_KEY_LOCK[0]); twowire_send(I2CDL_KEY_LOCK[1]); twowire_send(I2CDL_KEY_LOCK[2]);
-    twowire_endTransmission();
+    error = blockingWrite(currAddress, I2C_DEV_LOCK, I2CDL_KEY_LOCK[0]);
+    Serial.println(error);
+    
+    error = blockingWrite(currAddress, I2C_DEV_LOCK, I2CDL_KEY_LOCK[1]);
+    Serial.println(error);
+    
+    error = blockingWrite(currAddress, I2C_DEV_LOCK, I2CDL_KEY_LOCK[2]);
     // the I2C address is now newAddress
+    Serial.print("Locked dev register:  ");
+    Serial.println(error);
 }
 
 
 void setup() {
   // start serial interface
-  Serial.begin(9600);
+  
   
   //start twowire
   initialize_twi_nonblock();
@@ -175,11 +179,14 @@ void setup() {
   digitalWrite(xres6, HIGH);
   delay(100);
   
+  Serial.begin(9600);
+  
    // wake up chip 6 and change its address
   digitalWrite(xres6, LOW);
   delay(200);
-  configureChip(I2C_ADDR0);
   changeAddress(I2C_ADDR0, I2C_ADDR5);
+  configureChip(I2C_ADDR5);
+
   
   // wake up chip 5 and change its address
   digitalWrite(xres5, LOW);
@@ -250,8 +257,14 @@ int playNotes(byte touchData, int oscIndex, int frequencies[]) {
   return oscIndex;
 }
 
+
+
+
+
 // Magic non-blocking touch read stuff.
 // For now we're barely reading anything.
+// I can read the threshold register from 0x00, but not from any other address.
+// This makes me worried that my setup code is fucked.  Sigh.
 
 // This is what we're trying to duplicate
 //  Wire.beginTransmission(address);
@@ -267,12 +280,11 @@ void initiateTouchRead(uint8_t address) {
   txAddress = address;
   txBufferIndex = 0;
   txBufferLength = 0;  
-  txBuffer[txBufferIndex] = INPUT_PORT0;
-  txBufferIndex++;
+  txBuffer[txBufferIndex] = 0x00; // the register that we want to read.  So why doesn't 0x00 work?
+  ++txBufferIndex;
   txBufferLength = txBufferIndex;
   
   twi_initiateWriteTo(txAddress, txBuffer, txBufferLength);
-  Serial.print(address); Serial.print(txBuffer[0]); Serial.println(txBufferLength);
   acc_status = ACC_WRITING;
 }
 
@@ -281,6 +293,7 @@ void initiateTouchRequest(uint8_t address) {
   txBufferIndex = 0;
   txBufferLength = 0;
   
+  // This returns 229, which appears to be OK
   uint8_t read = twi_initiateReadFrom(address, 1);
   acc_status = ACC_READING;
 }
@@ -288,50 +301,107 @@ void initiateTouchRequest(uint8_t address) {
 
 void finaliseTouchRequest() {
   uint8_t read = twi_readMasterBuffer(rxBuffer, 1);
+  Serial.print("We got this many bytes:  ");
+  Serial.println(read);
+  rxBufferIndex = 0;
+  rxBufferLength = read;  
+  
+  uint8_t i = 0;
+  while (rxBufferLength - rxBufferIndex > 0) {         // device may send less than requested (abnormal)
+    accbytedata[i] = rxBuffer[rxBufferIndex];
+    ++rxBufferIndex;
+    i++;
+  }
+  
+  Serial.print("The returned byte:  ");
+  Serial.println(accbytedata[0], BIN);
+
   acc_status = ACC_IDLE;
-  Serial.println(rxBuffer[0]);
 }
 
 
 void updateControlT2() {
-  uint8_t touchData = 0;
-  int oscIndex = 0; 
-  Serial.print("Status:  ");
-  Serial.println(acc_status);
-  //Serial.print("TWI state:  ");
-  //Serial.println(twi_state);
   
-  switch(acc_status) {
-      case ACC_IDLE:
-	initiateTouchRead(0);
-	break;
-      case ACC_WRITING:
-	if (twi_state != TWI_MRX) {
-	  initiateTouchRequest(0);
-	}
-	break;
-      case ACC_READING:
-	if (twi_state != TWI_MRX) {
-	  finaliseTouchRequest();
-	}
-	break;
+  // my address changes are fucked up, despite the fact that they return 0
+  byte error, address;
+  int nDevices;
+  
+  nDevices = 0;
+  for(address = 0; address < 6; address++ ) 
+  {
+    // Serial.println(address);
+    // The i2c_scanner uses the return value of
+    // the Write.endTransmisstion to see if
+    // a device did acknowledge to the address.
+    twowire_beginTransmission(address);
+    error = twowire_endTransmission();
+    Serial.print("Error:"  );
+    Serial.println(error);
+
+    if (error == 0)
+    {
+      Serial.print("I2C device found at address 0x");
+      if (address<16) 
+        Serial.print("0");
+      Serial.print(address,HEX);
+      Serial.println("  !");
+
+      nDevices++;
     }
-
-  // For 6 chips
-  //touchData = readTouch(I2C_ADDR0); // get the touch values from 1 x CY8C201xx chips - GP0 are the higher bits, GP1 the lower
-  //touchData = conditionTouchData(touchData, 0);
-  //touchData = 7;
-  //Serial.println(touchData, BIN);
-  // So this is GP0:  0, 1, 2, 3 - GP1:  0, 1, 2, 3
-  // I am re-writing based on proximity, so EACH of these will be different.  Sorry.
-  // A-C#-F, A-C#-F, E-Ab
-  //oscIndex = playNotes(touchData, oscIndex, pitchArray);
-  
-
-  // Turn off any unused oscillators
-  for (oscIndex; oscIndex < NUMBER_OSCS; oscIndex++) {
-    newOscs[oscIndex] = 0;
+    else if (error==4) 
+    {
+      Serial.print("Unknow error at address 0x");
+      if (address<16) 
+        Serial.print("0");
+      Serial.println(address,HEX);
+    }    
   }
+  if (nDevices == 0)
+    Serial.println("No I2C devices found\n");
+  else
+    Serial.println("done\n");
+
+  delay(2000);           // wait 2 seconds for next scan
+  
+  
+//  uint8_t touchData = 0;
+//  int oscIndex = 0; 
+//  //Serial.print("Status:  ");
+//  //Serial.println(acc_status);
+//  //Serial.print("TWI state:  ");
+//  //Serial.println(twi_state);
+//  
+//  switch(acc_status) {
+//      case ACC_IDLE:
+//	initiateTouchRead(0x00);
+//	break;
+//      case ACC_WRITING:
+//	if (twi_state != TWI_MRX) {
+//	  initiateTouchRequest(0x00);
+//	}
+//	break;
+//      case ACC_READING:
+//	if (twi_state != TWI_MRX) {
+//	  finaliseTouchRequest();
+//	}
+//	break;
+//    }
+//
+//  // For 6 chips
+//  //touchData = readTouch(I2C_ADDR0); // get the touch values from 1 x CY8C201xx chips - GP0 are the higher bits, GP1 the lower
+//  //touchData = conditionTouchData(touchData, 0);
+//  //touchData = 7;
+//  //Serial.println(touchData, BIN);
+//  // So this is GP0:  0, 1, 2, 3 - GP1:  0, 1, 2, 3
+//  // I am re-writing based on proximity, so EACH of these will be different.  Sorry.
+//  // A-C#-F, A-C#-F, E-Ab
+//  //oscIndex = playNotes(touchData, oscIndex, pitchArray);
+//  
+//
+//  // Turn off any unused oscillators
+//  for (oscIndex; oscIndex < NUMBER_OSCS; oscIndex++) {
+//    newOscs[oscIndex] = 0;
+//  }
 }
 
 int updateAudioT2(){
