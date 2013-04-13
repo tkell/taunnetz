@@ -7,9 +7,8 @@
 #include <tables/triangle_warm8192_int8.h>
 #include <twi_nonblock.h>
 
-
 // Synthesis code
-#define CONTROL_RATE 64 // 64 seems better than 128, 32 does not work
+#define CONTROL_RATE 256 // 64 seems better than 128, 32 does not work
 #define NUMBER_OSCS 6 // Could change this, really
 #define NUMBER_CONDITIONS 4 // 4 works well.  More than 16 ruins my day.  May cut this totally?
 #define NOISE_THRESH 0x96  // 0x28 is factory default, 0x50 was working well, 0x72 was working great, 0xAA felt a little slow
@@ -144,7 +143,7 @@ void changeAddress(uint8_t currAddress, uint8_t newAddress) {
 
 void setup() {
   // start serial interface
-  Serial.begin(9600);
+  Serial.begin(57600);
   
   //start twowire
   initialize_twi_nonblock();
@@ -217,6 +216,7 @@ void setup() {
   
   //Serial.println("Finished touch setup");
   for (int i = 0; i < NUMBER_OSCS; i++) {
+    oscs[i]->setFreq(float(440.0));
     newOscs[i] = 0;
   }
   pitchArray = {57, 61, 65, 57, 61, 65, 64, 68};
@@ -244,28 +244,11 @@ int playNotes(byte touchData, int oscIndex, int frequencies[]) {
     }
     freqIndex++;
   }
-  
   return oscIndex;
 }
 
 
-
-
-
-// Magic non-blocking touch read stuff.
-// For now we're barely reading anything.
-// I can read the threshold register from 0x00, but not from any other address.
-// This makes me worried that my setup code is fucked.  Sigh.
-
-// This is what we're trying to duplicate
-//  Wire.beginTransmission(address);
-//  Wire.write(uint8_t(INPUT_PORT0));
-//  Wire.endTransmission();
-//      
-//  Wire.requestFrom(address, 1);
-//  while (!Wire.available()) {}
-//  touch = Wire.read() << 4;
-
+// The three non-blocking read functions
 void initiateTouchRead(uint8_t address) {
   // Looks like we may have to use these
   txAddress = address;
@@ -279,46 +262,50 @@ void initiateTouchRead(uint8_t address) {
   acc_status = ACC_WRITING;
 }
 
-
 void initiateTouchRequest(uint8_t address) {
   txBufferIndex = 0;
   txBufferLength = 0;
-  
-  // This returns 229, which appears to be OK
   uint8_t read = twi_initiateReadFrom(address, 1);
   acc_status = ACC_READING;
 }
 
-
-void finaliseTouchRequest() {
+uint8_t finaliseTouchRequest() {
+  uint8_t data;
   uint8_t read = twi_readMasterBuffer(rxBuffer, 1);
-  Serial.print("We got this many bytes:  ");
-  Serial.println(read);
   rxBufferIndex = 0;
   rxBufferLength = read;  
   
   uint8_t i = 0;
   while (rxBufferLength - rxBufferIndex > 0) {         // device may send less than requested (abnormal)
-    accbytedata[i] = rxBuffer[rxBufferIndex];
+    data = rxBuffer[rxBufferIndex];
     ++rxBufferIndex;
     i++;
   }
-  
-  Serial.print("The returned byte:  ");
-  Serial.println(accbytedata[0], BIN);
-
   acc_status = ACC_IDLE;
+  return data;
 }
 
+byte conditionTouchData(byte touchData, int index) {
+  byte newData;
+  newData = touchData;
+  // AND the data together
+  for (int i = 0; i < NUMBER_CONDITIONS; i++) {
+   newData = newData & conditionData[index][i];
+  }
+    
+  // Update the data.  WARNING:  REVERSE FOR LOOP
+  for (int i = NUMBER_CONDITIONS - 1; i > 0; i--) {
+    conditionData[index][i] = conditionData[index][i - 1];
+  }
+  conditionData[index][0] = touchData;
+  
+  return newData; 
+}
 
 void updateControlT2() {
   uint8_t touchData = 0;
   int oscIndex = 0; 
-  //Serial.print("Status:  ");
-  //Serial.println(acc_status);
-  //Serial.print("TWI state:  ");
-  //Serial.println(twi_state);
-  
+ 
   switch(acc_status) {
       case ACC_IDLE:
 	initiateTouchRead(0x00);
@@ -330,10 +317,14 @@ void updateControlT2() {
 	break;
       case ACC_READING:
 	if (twi_state != TWI_MRX) {
-	  finaliseTouchRequest();
+	  touchData = finaliseTouchRequest();
+          //Serial.println(touchData, BIN);
 	}
 	break;
     }
+  
+  touchData = 7;
+  oscIndex = playNotes(touchData, oscIndex, pitchArray);
 
   // For 6 chips
   //touchData = readTouch(I2C_ADDR0); // get the touch values from 1 x CY8C201xx chips - GP0 are the higher bits, GP1 the lower
@@ -353,41 +344,23 @@ void updateControlT2() {
 }
 
 int updateAudioT2(){
-  int asig = 0;
-  for (int i = 0; i < NUMBER_OSCS; i++) {
-    if (newOscs[i] != 0) {
-      asig = asig + oscs[i]->next();
-    }
-  }
+  //int asig = 0;
+  //for (int i = 0; i < NUMBER_OSCS; i++) {
+    //if (newOscs[i] != 0) {
+      //asig = asig + oscs[i]->next();
+    //}
+  //}
   //  >> 3 works for 1-3 oscs.  Will need to solve this later
-  return asig >> 3;
-}
-
-
-
-
-byte conditionTouchData(byte touchData, int index) {
-  byte newData;
-  newData = touchData;
-  // AND the data together
-  for (int i = 0; i < NUMBER_CONDITIONS; i++) {
-   newData = newData & conditionData[index][i];
-  }
-    
-  // Update the data.  WARNING:  REVERSE FOR LOOP
-  for (int i = NUMBER_CONDITIONS - 1; i > 0; i--) {
-    conditionData[index][i] = conditionData[index][i - 1];
-  }
-  conditionData[index][0] = touchData;
-  
-  return newData; 
+  //return asig >> 3;
+  //
+  return oscs[0]->next() + oscs[1]->next();
 }
 
 void loop() {
  audioHookT2();
 }
 
-// Touch Code
+// Old Touch Code
 //byte readTouch(int address) {
 //  uint8_t touch = 0;
 //
