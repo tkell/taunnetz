@@ -63,6 +63,7 @@ uint8_t acc_status;
 uint8_t accbytedata[1];
 
 // some CY8C201xx registers
+uint8_t INPUT_PORT0 = 0x00;
 uint8_t INPUT_PORT1 = 0x01;
 uint8_t I2C_DEV_LOCK = 0x79;
 uint8_t I2C_ADDR_DM = 0x7C;
@@ -175,9 +176,8 @@ void setup() {
    // wake up chip 6 and change its address
   digitalWrite(xres6, LOW);
   delay(200);
+  configureChip(I2C_ADDR0);
   changeAddress(I2C_ADDR0, I2C_ADDR5);
-  configureChip(I2C_ADDR5);
-  
   
   // wake up chip 5 and change its address
   digitalWrite(xres5, LOW);
@@ -271,7 +271,7 @@ void initiateTouchRead(uint8_t address) {
   txAddress = address;
   txBufferIndex = 0;
   txBufferLength = 0;  
-  txBuffer[txBufferIndex] = 0x00; // the register that we want to read.  So why doesn't 0x00 work?
+  txBuffer[txBufferIndex] = INPUT_PORT0; // the register that we want to read.  
   ++txBufferIndex;
   txBufferLength = txBufferIndex;
   
@@ -312,87 +312,44 @@ void finaliseTouchRequest() {
 
 
 void updateControlT2() {
+  uint8_t touchData = 0;
+  int oscIndex = 0; 
+  //Serial.print("Status:  ");
+  //Serial.println(acc_status);
+  //Serial.print("TWI state:  ");
+  //Serial.println(twi_state);
   
-  // my address changes appear to be fucked up, despite the fact that they return 0
-  byte error, address;
-  int nDevices;
-  
-  nDevices = 0;
-  for(address = 0; address < 6; address++ ) 
-  {
-    // Serial.println(address);
-    // The i2c_scanner uses the return value of
-    // the Write.endTransmisstion to see if
-    // a device did acknowledge to the address.
-    twowire_beginTransmission(address);
-    error = twowire_endTransmission();
-    Serial.print("Error:"  );
-    Serial.println(error);
-
-    if (error == 0)
-    {
-      Serial.print("I2C device found at address 0x");
-      if (address<16) 
-        Serial.print("0");
-      Serial.print(address,HEX);
-      Serial.println("  !");
-
-      nDevices++;
+  switch(acc_status) {
+      case ACC_IDLE:
+	initiateTouchRead(0x00);
+	break;
+      case ACC_WRITING:
+	if (twi_state != TWI_MRX) {
+	  initiateTouchRequest(0x00);
+	}
+	break;
+      case ACC_READING:
+	if (twi_state != TWI_MRX) {
+	  finaliseTouchRequest();
+	}
+	break;
     }
-    else if (error==4) 
-    {
-      Serial.print("Unknow error at address 0x");
-      if (address<16) 
-        Serial.print("0");
-      Serial.println(address,HEX);
-    }    
-  }
-  if (nDevices == 0)
-    Serial.println("No I2C devices found\n");
-  else
-    Serial.println("done\n");
 
-  delay(2000);           // wait 2 seconds for next scan
+  // For 6 chips
+  //touchData = readTouch(I2C_ADDR0); // get the touch values from 1 x CY8C201xx chips - GP0 are the higher bits, GP1 the lower
+  //touchData = conditionTouchData(touchData, 0);
+  //touchData = 7;
+  //Serial.println(touchData, BIN);
+  // So this is GP0:  0, 1, 2, 3 - GP1:  0, 1, 2, 3
+  // I am re-writing based on proximity, so EACH of these will be different.  Sorry.
+  // A-C#-F, A-C#-F, E-Ab
+  //oscIndex = playNotes(touchData, oscIndex, pitchArray);
   
-  
-//  uint8_t touchData = 0;
-//  int oscIndex = 0; 
-//  //Serial.print("Status:  ");
-//  //Serial.println(acc_status);
-//  //Serial.print("TWI state:  ");
-//  //Serial.println(twi_state);
-//  
-//  switch(acc_status) {
-//      case ACC_IDLE:
-//	initiateTouchRead(0x00);
-//	break;
-//      case ACC_WRITING:
-//	if (twi_state != TWI_MRX) {
-//	  initiateTouchRequest(0x00);
-//	}
-//	break;
-//      case ACC_READING:
-//	if (twi_state != TWI_MRX) {
-//	  finaliseTouchRequest();
-//	}
-//	break;
-//    }
-//
-//  // For 6 chips
-//  //touchData = readTouch(I2C_ADDR0); // get the touch values from 1 x CY8C201xx chips - GP0 are the higher bits, GP1 the lower
-//  //touchData = conditionTouchData(touchData, 0);
-//  //touchData = 7;
-//  //Serial.println(touchData, BIN);
-//  // So this is GP0:  0, 1, 2, 3 - GP1:  0, 1, 2, 3
-//  // I am re-writing based on proximity, so EACH of these will be different.  Sorry.
-//  // A-C#-F, A-C#-F, E-Ab
-//  //oscIndex = playNotes(touchData, oscIndex, pitchArray);
-//  
-//
-//  // Turn off any unused oscillators
-//  for (oscIndex; oscIndex < NUMBER_OSCS; oscIndex++) {
-//    newOscs[oscIndex] = 0;
-//  }
+
+  // Turn off any unused oscillators
+  for (oscIndex; oscIndex < NUMBER_OSCS; oscIndex++) {
+    newOscs[oscIndex] = 0;
+  }
 }
 
 int updateAudioT2(){
