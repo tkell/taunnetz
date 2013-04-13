@@ -64,7 +64,7 @@ uint8_t accbytedata[1];
 
 // some CY8C201xx registers
 uint8_t INPUT_PORT1 = 0x01;
-uint8_t I2C_DEV_LOCK = 0x7;
+uint8_t I2C_DEV_LOCK = 0x79;
 uint8_t I2C_ADDR_DM = 0x7C;
 uint8_t CS_ENABLE0 = 0x06;
 uint8_t CS_ENABLE1 = 0x07;
@@ -118,14 +118,10 @@ void changeAddress(uint8_t currAddress, uint8_t newAddress) {
     uint8_t error;
 
     // unlock the I2C_DEV_LOCK register
-    // Trying to send this byte by byte 
-    error = blockingWrite(currAddress, I2C_DEV_LOCK, I2CDL_KEY_UNLOCK[0]);
-    Serial.println(error);
-    
-    error = blockingWrite(currAddress, I2C_DEV_LOCK, I2CDL_KEY_UNLOCK[1]);
-    Serial.println(error);
-    
-    error = blockingWrite(currAddress, I2C_DEV_LOCK, I2CDL_KEY_UNLOCK[2]);
+    twowire_beginTransmission(currAddress);
+    twowire_send(I2C_DEV_LOCK);
+    twowire_send(I2CDL_KEY_UNLOCK[0]); twowire_send(I2CDL_KEY_UNLOCK[1]); twowire_send(I2CDL_KEY_UNLOCK[2]);
+    error = twowire_endTransmission();
     Serial.print("Unlocked dev register:  ");
     Serial.println(error);
     
@@ -135,13 +131,10 @@ void changeAddress(uint8_t currAddress, uint8_t newAddress) {
     Serial.println(error);
     
     //lock register again for change to take effect
-    error = blockingWrite(currAddress, I2C_DEV_LOCK, I2CDL_KEY_LOCK[0]);
-    Serial.println(error);
-    
-    error = blockingWrite(currAddress, I2C_DEV_LOCK, I2CDL_KEY_LOCK[1]);
-    Serial.println(error);
-    
-    error = blockingWrite(currAddress, I2C_DEV_LOCK, I2CDL_KEY_LOCK[2]);
+    twowire_beginTransmission(currAddress);
+    twowire_send(I2C_DEV_LOCK);
+    twowire_send(I2CDL_KEY_LOCK[0]); twowire_send(I2CDL_KEY_LOCK[1]); twowire_send(I2CDL_KEY_LOCK[2]);
+    error = twowire_endTransmission();
     // the I2C address is now newAddress
     Serial.print("Locked dev register:  ");
     Serial.println(error);
@@ -150,7 +143,7 @@ void changeAddress(uint8_t currAddress, uint8_t newAddress) {
 
 void setup() {
   // start serial interface
-  
+  Serial.begin(9600);
   
   //start twowire
   initialize_twi_nonblock();
@@ -178,15 +171,13 @@ void setup() {
   delay(100);
   digitalWrite(xres6, HIGH);
   delay(100);
-  
-  Serial.begin(9600);
-  
+    
    // wake up chip 6 and change its address
   digitalWrite(xres6, LOW);
   delay(200);
   changeAddress(I2C_ADDR0, I2C_ADDR5);
   configureChip(I2C_ADDR5);
-
+  
   
   // wake up chip 5 and change its address
   digitalWrite(xres5, LOW);
@@ -322,7 +313,7 @@ void finaliseTouchRequest() {
 
 void updateControlT2() {
   
-  // my address changes are fucked up, despite the fact that they return 0
+  // my address changes appear to be fucked up, despite the fact that they return 0
   byte error, address;
   int nDevices;
   
