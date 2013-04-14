@@ -37,6 +37,7 @@ Oscil<TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> *oscs[NUMBER_OSCS] = {
 
 Q16n16 frequency;
 int pitchArray[8];
+uint8_t chipIndex;
 uint8_t oldTouchData[NUMBER_CHIPS];
 
 
@@ -61,6 +62,8 @@ int xres6 = 7;
 #define ACC_READING 1
 #define ACC_WRITING 2
 uint8_t acc_status;
+
+
 
 // some CY8C201xx registers
 uint8_t INPUT_PORT0 = 0x00;
@@ -147,11 +150,12 @@ void changeAddress(uint8_t currAddress, uint8_t newAddress) {
 
 void setup() {
   // start serial interface
-  //Serial.begin(9600);
+  Serial.begin(9600);
 
   //start twowire
   initialize_twi_nonblock();
   acc_status = ACC_IDLE;
+  chipIndex = 0x00;
 
   // set reset pin modes
   pinMode(xres1, OUTPUT);
@@ -254,12 +258,12 @@ int playNotes(byte touchData, int oscIndex, int frequencies[]) {
 
 
 // The three non-blocking read functions
-void initiateTouchRead(uint8_t address) {
+void initiateTouchRead(uint8_t address, uint8_t reg) {
   // Looks like we may have to use these
   txAddress = address;
   txBufferIndex = 0;
   txBufferLength = 0;  
-  txBuffer[txBufferIndex] = INPUT_PORT0; // the register that we want to read.  
+  txBuffer[txBufferIndex] = reg; // the register that we want to read.  
   ++txBufferIndex;
   txBufferLength = txBufferIndex;
 
@@ -279,14 +283,16 @@ uint8_t finaliseTouchRequest() {
   uint8_t read = twi_readMasterBuffer(rxBuffer, 1);
   rxBufferIndex = 0;
   rxBufferLength = read;  
-
+  
   uint8_t i = 0;
   while (rxBufferLength - rxBufferIndex > 0) {         // device may send less than requested (abnormal)
+    Serial.println(rxBuffer[rxBufferIndex], BIN);
     data = rxBuffer[rxBufferIndex];
     ++rxBufferIndex;
     i++;
   }
   acc_status = ACC_IDLE;
+  
   return data;
 }
 
@@ -312,29 +318,44 @@ void updateControl() {
   int oscIndex = 0; 
   
   touchData = oldTouchData[0];
+  // Reset our index
+  if (chipIndex == 0x02) {
+    chipIndex = 0x00;
+  }
 
   switch(acc_status) {
-  case ACC_IDLE:
-    initiateTouchRead(0x00);
-    break;
-  case ACC_WRITING:
-    if (twi_state != TWI_MRX) {
-      initiateTouchRequest(0x00);
-    }
-    break;
-  case ACC_READING:
-    if (twi_state != TWI_MRX) {
-      touchData = finaliseTouchRequest();
-      touchData = conditionTouchData(touchData, 0);
-      ////Serial.println(touchData, BIN);
-      oldTouchData[0] = touchData;
-    }
-    break;
+    case ACC_IDLE:
+      initiateTouchRead(chipIndex, INPUT_PORT0);
+      break;
+    case ACC_WRITING:
+      if (twi_state != TWI_MRX) {
+        initiateTouchRequest(chipIndex);
+      }
+      break;
+    case ACC_READING:
+      if (twi_state != TWI_MRX) {
+        Serial.print("The chip index:  ");
+        Serial.println(chipIndex);
+        touchData = finaliseTouchRequest();
+        //touchData = conditionTouchData(touchData, 0);
+        ////Serial.println(touchData, BIN);
+        //oldTouchData[0] = touchData;
+        
+        // what is this I don't even
+        switch (chipIndex) {
+          case 0x00:
+            chipIndex = 0x01;
+            break; 
+          case 0x01:
+            chipIndex = 0x00;
+            break; 
+        }
+      }
+      break;
   }
 
   oscIndex = playNotes(touchData, oscIndex, pitchArray);
-
-
+  
   // For 6 chips
   //touchData = readTouch(I2C_ADDR0); // get the touch values from 1 x CY8C201xx chips - GP0 are the higher bits, GP1 the lower
   //touchData = conditionTouchData(touchData, 0);
