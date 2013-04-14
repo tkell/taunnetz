@@ -314,22 +314,37 @@ byte conditionTouchData(byte touchData, int index) {
 }
 
 void updateControl() {
+  
+  uint8_t address;
+  uint8_t port;
+  
   uint8_t touchData;
   int oscIndex = 0; 
   
   touchData = oldTouchData[0];
+  
   // Reset our index
-  if (chipIndex == 0x02) {
+  if (chipIndex == NUMBER_CHIPS * 2) {
     chipIndex = 0x00;
   }
-
+  
+  address = chipIndex >> 1;
+  port = INPUT_PORT0;
+  if (chipIndex % 2 == 1) {
+    port = INPUT_PORT1;
+  } 
+  
   switch(acc_status) {
     case ACC_IDLE:
-      initiateTouchRead(chipIndex, INPUT_PORT0);
+      //Serial.print("The address:  ");
+      //Serial.println(address);
+      //Serial.print("The port:  ");
+      //Serial.println(port);
+      initiateTouchRead(address, port);
       break;
     case ACC_WRITING:
       if (twi_state != TWI_MRX) {
-        initiateTouchRequest(chipIndex);
+        initiateTouchRequest(address);
       }
       break;
     case ACC_READING:
@@ -340,19 +355,10 @@ void updateControl() {
         //touchData = conditionTouchData(touchData, 0);
         ////Serial.println(touchData, BIN);
         //oldTouchData[0] = touchData;
-        
-        // what is this I don't even
-        switch (chipIndex) {
-          case 0x00:
-            chipIndex = 0x01;
-            break; 
-          case 0x01:
-            chipIndex = 0x00;
-            break; 
+        chipIndex = chipIndex + 0x01;
         }
-      }
       break;
-  }
+    }
 
   oscIndex = playNotes(touchData, oscIndex, pitchArray);
   
