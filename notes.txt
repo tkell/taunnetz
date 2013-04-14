@@ -37,15 +37,10 @@ ORDER OF OPERATIONS
 - Glue?  
 - I need to mount the amp near the speaker.  I might be able to just have it hang, as it is tiny.
 
-- PROBLEM:  it turns out that doing too many things in UpdateControl creates insane noise.
-- Not even.  It turns out that making wire. calls in UpdateControl creates insane noise.  Shit
-- I am currently trying to fix this using a new wire library.  ho ho ho. 
-- First:  be able to set up the chips.
+- OK, I can read one nibble without distortion.  Now I need to get the other 11 registers. 
+- I am having no end of trouble getting more than one nibble per updateControl, which bothers me deeply
+- Can I do one MASSIVE, 6-byte request, maybe?  Hmm
 
-
-- Then I need to wrestle with getting this on-board audio to pop:  I could make it single touch with chords?
-- Touching two buttons, regarless of board, causes the distortion.
-- 
 
 - Glue the boards in place, somehow
 - More tape to hold the pipe back together, pray.

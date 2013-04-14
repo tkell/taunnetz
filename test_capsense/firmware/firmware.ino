@@ -1,6 +1,5 @@
 // Cypress touch code via Joe, with deep thanks to Av, Ian, and Hackon for helping me with hardware.  Mozzi synth via Marcello.
 
-//#include <MozziGutsT2.h>
 #include <MozziGuts.h>
 #include <Oscil.h>
 #include <utils.h>
@@ -11,8 +10,8 @@
 // Synthesis code
 #define CONTROL_RATE 64 // 64 seems better than 128, 32 does not work
 #define NUMBER_OSCS 6 // Could change this, really
-#define NUMBER_CONDITIONS 3 // 3 was working
-#define NOISE_THRESH 0x80 // 80 was working
+#define NUMBER_CONDITIONS 3 // 3 is working
+#define NOISE_THRESH 0x80 // 80 is working
 #define NUMBER_CHIPS 6
 
 byte newOscs[NUMBER_OSCS];
@@ -50,19 +49,18 @@ int xres5 = 6;
 int xres6 = 7;
 
 // I2C adresses
-#define I2C_ADDR0 (0x00)
+#define I2C_ADDR0 0x00
 #define I2C_ADDR1 0x01
 #define I2C_ADDR2 0x02
 #define I2C_ADDR3 0x03
 #define I2C_ADDR4 0x04
-#define I2C_ADDR5 (0x05)
+#define I2C_ADDR5 0x05
 
 // Non-blocking globals
 #define ACC_IDLE 0
 #define ACC_READING 1
 #define ACC_WRITING 2
 uint8_t acc_status;
-uint8_t accbytedata[1];
 
 // some CY8C201xx registers
 uint8_t INPUT_PORT0 = 0x00;
@@ -75,11 +73,8 @@ uint8_t COMMAND_REG = 0xA0;
 uint8_t CS_NOISE_TH = 0x4E;
 
 // Secret codes for locking/unlocking the I2C_DEV_LOCK register
-uint8_t I2CDL_KEY_UNLOCK[3] = {
-  0x3C, 0xA5, 0x69};
-uint8_t I2CDL_KEY_LOCK[3] = {
-  0x96, 0x5A, 0xC3};
-
+uint8_t I2CDL_KEY_UNLOCK[3] = {0x3C, 0xA5, 0x69};
+uint8_t I2CDL_KEY_LOCK[3] = {0x96, 0x5A, 0xC3};
 
 uint8_t blockingWrite(uint8_t address, uint8_t reg, byte value) {
   twowire_beginTransmission(address);
