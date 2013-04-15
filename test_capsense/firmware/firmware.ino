@@ -10,12 +10,12 @@
 // Synthesis code
 #define CONTROL_RATE 64 // 64 seems better than 128, 32 does not work
 #define NUMBER_OSCS 6 // Could change this, really
-#define NUMBER_CONDITIONS 3 // 3 is working
-#define NOISE_THRESH 0x80 // 80 is working
+#define NUMBER_CONDITIONS 3 // 3 was working
+#define NOISE_THRESH 0x84 // 80 is working
 #define NUMBER_CHIPS 6
 
 byte newOscs[NUMBER_OSCS];
-byte conditionData[NUMBER_CHIPS][NUMBER_CONDITIONS];
+byte conditionData[NUMBER_CHIPS * 2][NUMBER_CONDITIONS];
 
 // Amazingly shitty need to declare every osc by hand
 Oscil <TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> osc1(TRIANGLE_WARM8192_DATA);
@@ -354,13 +354,12 @@ void updateControl() {
         masterTouchData[chipIndex] = finaliseTouchRequest();
         //touchData = conditionTouchData(touchData, 0);
         //Serial.println(masterTouchData[chipIndex], BIN);
-        //oldTouchData[0] = touchData;
         chipIndex = chipIndex + 0x01;
         }
       break;
     }
 
-  
+  // Play all the chips
   for (int i = 0; i < NUMBER_CHIPS * 2; i++) {
    oscIndex = playNotes(masterTouchData[i], oscIndex, pitchArray[i]);
   }
