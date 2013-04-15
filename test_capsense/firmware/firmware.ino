@@ -169,7 +169,7 @@ void setup() {
   // wake up chip 2 and change its address
   digitalWrite(xres2, LOW);
   delay(200);
-  configureChip(I2C_ADDR0, 0x25);
+  configureChip(I2C_ADDR0, NOISE_THRESH - 0x40); // For my one chip with two shitty connections.  I think i've lost these
   changeAddress(I2C_ADDR0, I2C_ADDR1);
   
   // wake up chip 1
