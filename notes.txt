@@ -32,14 +32,15 @@ The speaker should come out the other end.
 
 
 ORDER OF OPERATIONS
-- TEST, board by board:  VICTORY (solved by increasing the noise threshold on the chips)
 -I need to mount the speaker on the far end. How can I do this?
 - Glue?  
 - I need to mount the amp near the speaker.  I might be able to just have it hang, as it is tiny.
 
-- OK, I can read one nibble without distortion.  Now I need to get the other 11 registers. 
-- I am having no end of trouble getting more than one nibble per updateControl, which bothers me deeply
-- Can I do one MASSIVE, 6-byte request, maybe?  Hmm
+- OK, I am, in principle, getting all 12 registers, after a few reboots.  
+- I now need to make a twelve-byte oldTouchData array (or make it 6 and figure out how to OR them together in the loop?)
+- And then every time I go through there, I update one register, and then play each of those bytes.
+- I would really like to OR things together, but we'll see about that on Monday. 
+- I could also increase my control rate to 256 to help with this.  We'll see.  
 
 
 - Glue the boards in place, somehow
