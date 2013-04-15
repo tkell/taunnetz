@@ -11,11 +11,11 @@
 #define CONTROL_RATE 64 // 64 seems better than 128, 32 does not work
 #define NUMBER_OSCS 3 // Could change this, really
 #define NUMBER_CONDITIONS 3 // 3 was working
-#define NOISE_THRESH 0x80 // 80 is the minimum, 96 is is about the useful max
+#define NOISE_THRESH 0x96 // 80 is the minimum, 96 is is about the useful max
 #define NUMBER_CHIPS 6
 
 byte newOscs[NUMBER_OSCS];
-byte conditionData[NUMBER_CHIPS * 2][NUMBER_CONDITIONS];
+uint8_t conditionData[NUMBER_CHIPS * 2][NUMBER_CONDITIONS];
 
 // Amazingly shitty need to declare every osc by hand
 Oscil <TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> osc1(TRIANGLE_WARM8192_DATA);
@@ -150,7 +150,7 @@ void changeAddress(uint8_t currAddress, uint8_t newAddress) {
 
 void setup() {
   // start serial interface
-  Serial.begin(9600);
+  //Serial.begin(9600);
 
   //start twowire
   initialize_twi_nonblock();
@@ -261,8 +261,7 @@ int playNotes(byte touchData, int oscIndex, unsigned int frequencies[]) {
     }
     if (touchData & mask) {
       //Serial.println(freqIndex);
-      Serial.println(frequencies[freqIndex]);
-      //frequency = Q16n16_mtof(Q16n0_to_Q16n16(frequencies[freqIndex]));
+      //Serial.println(frequencies[freqIndex]);
       oscs[oscIndex]->setFreq(frequencies[freqIndex]);  
       newOscs[oscIndex] = 1;
       oscIndex++;
@@ -313,8 +312,8 @@ uint8_t finaliseTouchRequest() {
   return data;
 }
 
-byte conditionTouchData(byte touchData, int index) {
-  byte newData;
+byte conditionTouchData(uint8_t touchData, int index) {
+  uint8_t newData;
   newData = touchData;
   // AND the data together
   for (int i = 0; i < NUMBER_CONDITIONS; i++) {
@@ -364,7 +363,8 @@ void updateControl() {
         //Serial.print("The chip index:  ");
         //Serial.println(chipIndex);
         masterTouchData[chipIndex] = finaliseTouchRequest();
-        //masterTouchData[chipIndex] = conditionTouchData(masterTouchData[chipIndex], chipIndex);
+        //Serial.println(masterTouchData[chipIndex], BIN);
+        //masterTouchData[chipIndex] = conditionTouchData(masterTouchData[chipIndex], chipIndex); // this is WAY too slow now.  SIgh.  
         //Serial.println(masterTouchData[chipIndex], BIN);
         chipIndex = chipIndex + 0x01;
         }
