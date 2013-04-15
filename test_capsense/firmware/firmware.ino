@@ -11,7 +11,7 @@
 #define CONTROL_RATE 64 // 64 seems better than 128, 32 does not work
 #define NUMBER_OSCS 6 // Could change this, really
 #define NUMBER_CONDITIONS 3 // 3 was working
-#define NOISE_THRESH 0x84 // 80 is working
+#define NOISE_THRESH 0x96 // 80 is working
 #define NUMBER_CHIPS 6
 
 byte newOscs[NUMBER_OSCS];
@@ -62,7 +62,6 @@ int xres6 = 7;
 #define ACC_READING 1
 #define ACC_WRITING 2
 uint8_t acc_status;
-
 
 
 // some CY8C201xx registers
@@ -148,9 +147,10 @@ void changeAddress(uint8_t currAddress, uint8_t newAddress) {
 }
 
 
+
 void setup() {
   // start serial interface
-  //Serial.begin(9600);
+  Serial.begin(9600);
 
   //start twowire
   initialize_twi_nonblock();
@@ -159,10 +159,19 @@ void setup() {
   
   // We'll keep the init for the touch array in this loop, and then replace
   //  the pitch array with bespoke things
-  for (int j = 0; j < NUMBER_CHIPS * 2; j++) {
-      pitchArray[j] = {57, 61, 65, 57};
-      masterTouchData[j] = 0;
+  for (int i = 0; i < NUMBER_CHIPS * 2; i++) {
+      masterTouchData[i] = 0;
   }
+  
+  // Initialize the pitch array.  Because I wired for short distance, these are out of order!  Sorry!!
+  pitchArray[0] = {57, 61, 65, 57}; pitchArray[1] = {61, 65, 64, 64};
+  pitchArray[2] = {68, 60, 63, 59}; pitchArray[3] = {68, 60, 63, 67};
+  pitchArray[4] = {62, 66, 66, 58}; pitchArray[5] = {67, 59, 58, 62};
+  
+  // 69 - 80
+  pitchArray[6] = {69, 77, 80, 76}; pitchArray[7] = {69, 77, 73, 73};
+  pitchArray[8] = {79, 80, 79, 75}; pitchArray[9] = {72, 72, 76, 75};
+  pitchArray[10] = {74, 70, 70, 78}; pitchArray[11] = {71, 71, 78, 74};
 
   // set reset pin modes
   pinMode(xres1, OUTPUT);
@@ -251,6 +260,8 @@ int playNotes(byte touchData, int oscIndex, int frequencies[]) {
       break;
     }
     if (touchData & mask) {
+      Serial.println(freqIndex);
+      Serial.println(frequencies[freqIndex]);
       frequency = Q16n16_mtof(Q16n0_to_Q16n16(frequencies[freqIndex]));
       oscs[oscIndex]->setFreq_Q16n16(frequency);  
       newOscs[oscIndex] = 1;
@@ -260,6 +271,7 @@ int playNotes(byte touchData, int oscIndex, int frequencies[]) {
   }
   return oscIndex;
 }
+
 
 
 // The three non-blocking read functions
@@ -352,7 +364,7 @@ void updateControl() {
         //Serial.print("The chip index:  ");
         //Serial.println(chipIndex);
         masterTouchData[chipIndex] = finaliseTouchRequest();
-        //touchData = conditionTouchData(touchData, 0);
+        //masterTouchData[chipIndex] = conditionTouchData(masterTouchData[chipIndex], chipIndex);
         //Serial.println(masterTouchData[chipIndex], BIN);
         chipIndex = chipIndex + 0x01;
         }
@@ -378,7 +390,7 @@ int updateAudio(){
     }
   }
   //  >> 3 works for 1-3 oscs.  Will need to solve this later
-  return asig >> 2;
+  return asig >> 3;
   // Debug audio test:
   //return oscs[0]->next() >> 3;
 }

@@ -20,6 +20,18 @@ E-Ab-C:  76, 80, 72
 B-Eb-G:  71, 75, 79
 F#-Bb-D: 78, 70, 74
 
+And the actual pitch array code
+  // Initialize the pitch array here
+  // Because I wired for short distance, these are out of order!  Sorry!!
+  // 57 - 68
+  pitchArray[0] = {"61", "65", "64", "64", "57", "61", "65", "57"};  // GOLD
+  pitchArray[1] = {"68", "60", "63", "67", "68", "60", "63", "59"};  // GOLD
+  pitchArray[2] = {"67", "59", "58", "62", "62", "66", "66", "58"};  // GOLD
+  // 69 - 80
+  pitchArray[3] = {"69", "77", "73", "73", "69", "77", "80", "76"}; // GOLD
+  pitchArray[4] = {"72", "72", "76", "75", "79", "80", "79", "75"}; // GOLD
+  pitchArray[5] = {"71", "71", "78", "74", "74", "70", "70", "78"}; // GOLD
+
 PUTTING THINGS INSIDE THE TUBE.
 I need to mount both boards, the arduino, and the battery.  How can I do this?
 - Glue?  foam to the bottom of the boards + dunio?
