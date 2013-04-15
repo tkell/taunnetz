@@ -3,8 +3,8 @@
 
 
 #include <Wire.h>
-#define NUMBER_CONDITIONS 1 // 4 works well.  More than 16 ruins my day.  May cut this totally?
-#define NOISE_THRESH 0x80  // 0x28 is factory default, 0x50 was working well, 0x72 was working great, 0xAA felt a little slow
+#define NUMBER_CONDITIONS 4 // 4 works well.  More than 16 ruins my day.  May cut this totally?
+#define NOISE_THRESH 0x72 // 0x28 is factory default, 0x50 was working well, 0x72 was working great, 0xAA felt a little slow
 #define NUMBER_CHIPS 6
 #define NUMBER_TOUCHES 10
 
@@ -44,7 +44,7 @@ byte I2CDL_KEY_UNLOCK[3] = {0x3C, 0xA5, 0x69};
 byte I2CDL_KEY_LOCK[3] = {0x96, 0x5A, 0xC3};
 
 // Set a chip up so we can read its register
-void configureChip(int address) {
+void configureChip(int address, int noise_thresh) {
   byte error;
 
   // switch to setup mode
@@ -74,7 +74,7 @@ void configureChip(int address) {
   // Increase the noise threshold
   Wire.beginTransmission(address);
   Wire.write(CS_NOISE_TH);
-  Wire.write(NOISE_THRESH); // Factory default is 0x28
+  Wire.write(noise_thresh); // Factory default is 0x28
   error = Wire.endTransmission();
   //Serial.print("Increased Noise Threshold:  ");
   //Serial.println(error);
@@ -145,37 +145,37 @@ void setup() {
    // wake up chip 6 and change its address
   digitalWrite(xres6, LOW);
   delay(200);
-  configureChip(I2C_ADDR0);
+  configureChip(I2C_ADDR0, NOISE_THRESH);
   changeAddress(I2C_ADDR0, I2C_ADDR5);
   
   // wake up chip 5 and change its address
   digitalWrite(xres5, LOW);
   delay(200);
-  configureChip(I2C_ADDR0);
+  configureChip(I2C_ADDR0, NOISE_THRESH);
   changeAddress(I2C_ADDR0, I2C_ADDR4);
   
   // wake up chip 4 and change its address
   digitalWrite(xres4, LOW);
   delay(200);
-  configureChip(I2C_ADDR0);
+  configureChip(I2C_ADDR0, NOISE_THRESH);
   changeAddress(I2C_ADDR0, I2C_ADDR3);
   
   // wake up chip 3 and change its address
   digitalWrite(xres3, LOW);
   delay(200);
-  configureChip(I2C_ADDR0);
+  configureChip(I2C_ADDR0, NOISE_THRESH);
   changeAddress(I2C_ADDR0, I2C_ADDR2);
 
   // wake up chip 2 and change its address
   digitalWrite(xres2, LOW);
   delay(200);
-  configureChip(I2C_ADDR0);
+  configureChip(I2C_ADDR0, 0x25);
   changeAddress(I2C_ADDR0, I2C_ADDR1);
   
   // wake up chip 1
   digitalWrite(xres1, LOW);
   delay(200);
-  configureChip(I2C_ADDR0);
+  configureChip(I2C_ADDR0, NOISE_THRESH);
   
   
 
