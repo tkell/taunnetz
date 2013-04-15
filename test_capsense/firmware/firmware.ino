@@ -9,9 +9,9 @@
 
 // Synthesis code
 #define CONTROL_RATE 64 // 64 seems better than 128, 32 does not work
-#define NUMBER_OSCS 6 // Could change this, really
+#define NUMBER_OSCS 3 // Could change this, really
 #define NUMBER_CONDITIONS 3 // 3 was working
-#define NOISE_THRESH 0x96 // 80 is working
+#define NOISE_THRESH 0x80 // 80 is the minimum, 96 is is about the useful max
 #define NUMBER_CHIPS 6
 
 byte newOscs[NUMBER_OSCS];
@@ -32,13 +32,13 @@ Oscil <TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> osc11(TRIANGLE_WARM8192_DATA);
 Oscil <TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> osc12(TRIANGLE_WARM8192_DATA);
 
 Oscil<TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> *oscs[NUMBER_OSCS] = {
-  &osc1, &osc2, &osc3, &osc4, &osc5, &osc6
+  &osc1, &osc2, &osc3
 };
 
 Q16n16 frequency;
 uint8_t chipIndex;
 uint8_t masterTouchData[NUMBER_CHIPS * 2];
-int pitchArray[NUMBER_CHIPS * 2][4];
+unsigned int pitchArray[NUMBER_CHIPS * 2][4];
 
 
 // Touch code
@@ -164,14 +164,14 @@ void setup() {
   }
   
   // Initialize the pitch array.  Because I wired for short distance, these are out of order!  Sorry!!
-  pitchArray[0] = {57, 61, 65, 57}; pitchArray[1] = {61, 65, 64, 64};
-  pitchArray[2] = {68, 60, 63, 59}; pitchArray[3] = {68, 60, 63, 67};
-  pitchArray[4] = {62, 66, 66, 58}; pitchArray[5] = {67, 59, 58, 62};
+  pitchArray[0] = {440u, 554u, 698u, 440u}; pitchArray[1] = {554u, 698u, 659u, 659u};
+  pitchArray[2] = {831u, 523u, 622u, 494u}; pitchArray[3] = {831u, 523u, 622u, 784u};
+  pitchArray[4] = {587u, 740u, 740u, 466u}; pitchArray[5] = {784u, 494u, 466u, 587u};
   
   // 69 - 80
-  pitchArray[6] = {69, 77, 80, 76}; pitchArray[7] = {69, 77, 73, 73};
-  pitchArray[8] = {79, 80, 79, 75}; pitchArray[9] = {72, 72, 76, 75};
-  pitchArray[10] = {74, 70, 70, 78}; pitchArray[11] = {71, 71, 78, 74};
+  pitchArray[6] = {880u, 1397u, 1661u, 1319u}; pitchArray[7] = {880u, 1397u, 1109u, 1109u};
+  pitchArray[8] = {1568u, 1661u, 1568u, 1245u}; pitchArray[9] = {1047u, 1047u, 1319u, 1245u};
+  pitchArray[10] = {1175u, 932u, 932u, 1480u}; pitchArray[11] = {988u, 988u, 1480u, 1175u};
 
   // set reset pin modes
   pinMode(xres1, OUTPUT);
@@ -251,7 +251,7 @@ void setup() {
 
 
 
-int playNotes(byte touchData, int oscIndex, int frequencies[]) {
+int playNotes(byte touchData, int oscIndex, unsigned int frequencies[]) {
   byte mask;
   int freqIndex = 0;
   // Going to try to scope this so it is always less than 10000
@@ -260,10 +260,10 @@ int playNotes(byte touchData, int oscIndex, int frequencies[]) {
       break;
     }
     if (touchData & mask) {
-      Serial.println(freqIndex);
+      //Serial.println(freqIndex);
       Serial.println(frequencies[freqIndex]);
-      frequency = Q16n16_mtof(Q16n0_to_Q16n16(frequencies[freqIndex]));
-      oscs[oscIndex]->setFreq_Q16n16(frequency);  
+      //frequency = Q16n16_mtof(Q16n0_to_Q16n16(frequencies[freqIndex]));
+      oscs[oscIndex]->setFreq(frequencies[freqIndex]);  
       newOscs[oscIndex] = 1;
       oscIndex++;
     }
