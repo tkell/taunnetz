@@ -36,9 +36,9 @@ Oscil<TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> *oscs[NUMBER_OSCS] = {
 };
 
 Q16n16 frequency;
-int pitchArray[8];
 uint8_t chipIndex;
-uint8_t oldTouchData[NUMBER_CHIPS];
+uint8_t masterTouchData[NUMBER_CHIPS * 2];
+int pitchArray[NUMBER_CHIPS * 2][4];
 
 
 // Touch code
@@ -150,12 +150,19 @@ void changeAddress(uint8_t currAddress, uint8_t newAddress) {
 
 void setup() {
   // start serial interface
-  Serial.begin(9600);
+  //Serial.begin(9600);
 
   //start twowire
   initialize_twi_nonblock();
   acc_status = ACC_IDLE;
   chipIndex = 0x00;
+  
+  // We'll keep the init for the touch array in this loop, and then replace
+  //  the pitch array with bespoke things
+  for (int j = 0; j < NUMBER_CHIPS * 2; j++) {
+      pitchArray[j] = {57, 61, 65, 57};
+      masterTouchData[j] = 0;
+  }
 
   // set reset pin modes
   pinMode(xres1, OUTPUT);
@@ -222,17 +229,15 @@ void setup() {
     }  
   }
 
-  ////Serial.println("Finished touch setup");
+  //Serial.println("Finished touch setup");
   for (int i = 0; i < NUMBER_OSCS; i++) {
     oscs[i]->setFreq(440u);
     newOscs[i] = 0;
   }
-  pitchArray = {
-    57, 61, 65, 57, 61, 65, 64, 68    };
 
   delay(250);
-  ////Serial.println("Finished Mozzi setup");
   startMozzi(CONTROL_RATE);
+  //Serial.println("Finished Mozzi setup");
 }
 
 
@@ -240,9 +245,9 @@ void setup() {
 int playNotes(byte touchData, int oscIndex, int frequencies[]) {
   byte mask;
   int freqIndex = 0;
-
+  // Going to try to scope this so it is always less than 10000
   for (mask = 00000001; mask > 0; mask <<= 1) {
-    if (oscIndex >= NUMBER_OSCS) { 
+    if (oscIndex >= NUMBER_OSCS || mask >= 10000) { 
       break;
     }
     if (touchData & mask) {
@@ -286,7 +291,7 @@ uint8_t finaliseTouchRequest() {
   
   uint8_t i = 0;
   while (rxBufferLength - rxBufferIndex > 0) {         // device may send less than requested (abnormal)
-    Serial.println(rxBuffer[rxBufferIndex], BIN);
+    //Serial.println(rxBuffer[rxBufferIndex], BIN);
     data = rxBuffer[rxBufferIndex];
     ++rxBufferIndex;
     i++;
@@ -314,14 +319,9 @@ byte conditionTouchData(byte touchData, int index) {
 }
 
 void updateControl() {
-  
   uint8_t address;
   uint8_t port;
-  
-  uint8_t touchData;
   int oscIndex = 0; 
-  
-  touchData = oldTouchData[0];
   
   // Reset our index
   if (chipIndex == NUMBER_CHIPS * 2) {
@@ -349,23 +349,21 @@ void updateControl() {
       break;
     case ACC_READING:
       if (twi_state != TWI_MRX) {
-        Serial.print("The chip index:  ");
-        Serial.println(chipIndex);
-        touchData = finaliseTouchRequest();
+        //Serial.print("The chip index:  ");
+        //Serial.println(chipIndex);
+        masterTouchData[chipIndex] = finaliseTouchRequest();
         //touchData = conditionTouchData(touchData, 0);
-        ////Serial.println(touchData, BIN);
+        //Serial.println(masterTouchData[chipIndex], BIN);
         //oldTouchData[0] = touchData;
         chipIndex = chipIndex + 0x01;
         }
       break;
     }
 
-  oscIndex = playNotes(touchData, oscIndex, pitchArray);
   
-  // For 6 chips
-  //touchData = readTouch(I2C_ADDR0); // get the touch values from 1 x CY8C201xx chips - GP0 are the higher bits, GP1 the lower
-  //touchData = conditionTouchData(touchData, 0);
-  //oscIndex = playNotes(touchData, oscIndex, pitchArray);
+  for (int i = 0; i < NUMBER_CHIPS * 2; i++) {
+   oscIndex = playNotes(masterTouchData[i], oscIndex, pitchArray[i]);
+  }
 
   // Turn off any unused oscillators
   for (oscIndex; oscIndex < NUMBER_OSCS; oscIndex++) {
@@ -381,7 +379,7 @@ int updateAudio(){
     }
   }
   //  >> 3 works for 1-3 oscs.  Will need to solve this later
-  return asig >> 3;
+  return asig >> 2;
   // Debug audio test:
   //return oscs[0]->next() >> 3;
 }
