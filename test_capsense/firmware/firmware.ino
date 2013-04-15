@@ -1,4 +1,5 @@
 // Cypress touch code via Joe, with deep thanks to Av, Ian, and Hackon for helping me with hardware.  Mozzi synth via Marcello.
+// This is the version with onboard audio.  it's a little bit optimistic.  
 
 #include <MozziGuts.h>
 #include <Oscil.h>
@@ -10,12 +11,10 @@
 // Synthesis code
 #define CONTROL_RATE 64 // 64 seems better than 128, 32 does not work
 #define NUMBER_OSCS 3 // Could change this, really
-#define NUMBER_CONDITIONS 3 // 3 was working
-#define NOISE_THRESH 0x96 // 80 is the minimum, 96 is is about the useful max
+#define NOISE_THRESH 0xA0 // 80 is the minimum, 96 is is about the useful max
 #define NUMBER_CHIPS 6
 
 byte newOscs[NUMBER_OSCS];
-uint8_t conditionData[NUMBER_CHIPS * 2][NUMBER_CONDITIONS];
 
 // Amazingly shitty need to declare every osc by hand
 Oscil <TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> osc1(TRIANGLE_WARM8192_DATA);
@@ -35,7 +34,6 @@ Oscil<TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> *oscs[NUMBER_OSCS] = {
   &osc1, &osc2, &osc3
 };
 
-Q16n16 frequency;
 uint8_t chipIndex;
 uint8_t masterTouchData[NUMBER_CHIPS * 2];
 unsigned int pitchArray[NUMBER_CHIPS * 2][4];
@@ -150,7 +148,7 @@ void changeAddress(uint8_t currAddress, uint8_t newAddress) {
 
 void setup() {
   // start serial interface
-  //Serial.begin(9600);
+  Serial.begin(9600);
 
   //start twowire
   initialize_twi_nonblock();
@@ -231,13 +229,6 @@ void setup() {
   delay(200);
   configureChip(I2C_ADDR0);
 
-  // Initialize the conditioning arrays
-  for (int i = 0; i < NUMBER_CHIPS; i++) {
-    for (int j = 0; j < NUMBER_CONDITIONS; j++) {
-      conditionData[i][j] = 0;
-    }  
-  }
-
   //Serial.println("Finished touch setup");
   for (int i = 0; i < NUMBER_OSCS; i++) {
     oscs[i]->setFreq(440u);
@@ -312,30 +303,13 @@ uint8_t finaliseTouchRequest() {
   return data;
 }
 
-byte conditionTouchData(uint8_t touchData, int index) {
-  uint8_t newData;
-  newData = touchData;
-  // AND the data together
-  for (int i = 0; i < NUMBER_CONDITIONS; i++) {
-    newData = newData & conditionData[index][i];
-  }
-
-  // Update the data.  WARNING:  REVERSE FOR LOOP
-  for (int i = NUMBER_CONDITIONS - 1; i > 0; i--) {
-    conditionData[index][i] = conditionData[index][i - 1];
-  }
-  conditionData[index][0] = touchData;
-
-  return newData; 
-}
-
 void updateControl() {
   uint8_t address;
   uint8_t port;
   int oscIndex = 0; 
   
   // Reset our index
-  if (chipIndex == NUMBER_CHIPS * 2) {
+  if (chipIndex == 0x0C) { // should be NUMBER_CHIPS *2 which is 0x0C
     chipIndex = 0x00;
   }
   
@@ -363,7 +337,7 @@ void updateControl() {
         //Serial.print("The chip index:  ");
         //Serial.println(chipIndex);
         masterTouchData[chipIndex] = finaliseTouchRequest();
-        //Serial.println(masterTouchData[chipIndex], BIN);
+        Serial.println(masterTouchData[chipIndex], BIN);
         //masterTouchData[chipIndex] = conditionTouchData(masterTouchData[chipIndex], chipIndex); // this is WAY too slow now.  SIgh.  
         //Serial.println(masterTouchData[chipIndex], BIN);
         chipIndex = chipIndex + 0x01;
@@ -398,31 +372,3 @@ int updateAudio(){
 void loop() {
   audioHook();
 }
-
-// Old Touch Code
-//byte readTouch(int address) {
-//  uint8_t touch = 0;
-//
-//  // request Register 00h: INPUT_PORT0
-//  Wire.beginTransmission(address);
-//  Wire.write(uint8_t(INPUT_PORT0));
-//  Wire.endTransmission();
-//      
-//  Wire.requestFrom(address, 1);
-//  while (!Wire.available()) {}
-//  touch = Wire.read() << 4;
-//  
-//  // request Register 01h: INPUT_PORT1
-//  Wire.beginTransmission(address);
-//  Wire.write(INPUT_PORT1);
-//  Wire.endTransmission();
-//  
-//  Wire.requestFrom(address, 1);
-//  while (!Wire.available()) {}
-//  
-//  touch |= Wire.read();
-//  return touch;
-//}
-
-
-
