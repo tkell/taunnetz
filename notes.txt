@@ -2,7 +2,6 @@ xFor I2C:
 Analog 4 is SDA - Analog 5 is SCL.
 
 We can connect multiple devices to these two pins, but we need to ground all of them.
-
 Remember that running the serial port fucks with the audio output!!!
 
 The datasheet:  http://www.cypress.com/?docID=41804
@@ -37,7 +36,8 @@ ORDER OF OPERATIONS
 - The non-blocking code means I can't condition things, so shit gets iffy
 - It is a HUGE battery hog:  the new battery appears to fix all the things though?
 
-- More tape to hold the pipe back together, pray.
--  I need to attach the new cover.
+TODO:  
+- Make and print a sliiightly larger cover???  Is there a better place to print at McGill?
+
 
 Then I need a drink.  Or six.  Or seven.

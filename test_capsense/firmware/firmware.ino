@@ -10,7 +10,7 @@
 
 // Synthesis code
 #define CONTROL_RATE 64 // 64 seems better than 128, 32 does not work
-#define NUMBER_OSCS 3 // Could change this, really
+#define NUMBER_OSCS 4 // Could change this, really
 #define NOISE_THRESH 0xA0 // 80 is the minimum, 96 is is about the useful max
 #define NUMBER_CHIPS 6
 
@@ -30,8 +30,8 @@ Oscil <TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> osc10(TRIANGLE_WARM8192_DATA);
 Oscil <TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> osc11(TRIANGLE_WARM8192_DATA);
 Oscil <TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> osc12(TRIANGLE_WARM8192_DATA);
 
-Oscil<TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> *oscs[NUMBER_OSCS] = {
-  &osc1, &osc2, &osc3
+Oscil<TRIANGLE_WARM8192_NUM_CELLS, AUDIO_RATE> *oscs[NUMBER_OSCS * 2] = {
+  &osc1, &osc2, &osc3, &osc4, &osc5, &osc6, &osc7, &osc8
 };
 
 uint8_t chipIndex;
@@ -148,7 +148,7 @@ void changeAddress(uint8_t currAddress, uint8_t newAddress) {
 
 void setup() {
   // start serial interface
-  Serial.begin(9600);
+  //Serial.begin(9600);
 
   //start twowire
   initialize_twi_nonblock();
@@ -254,6 +254,7 @@ int playNotes(byte touchData, int oscIndex, unsigned int frequencies[]) {
       //Serial.println(freqIndex);
       //Serial.println(frequencies[freqIndex]);
       oscs[oscIndex]->setFreq(frequencies[freqIndex]);  
+      oscs[oscIndex + NUMBER_OSCS]->setFreq(frequencies[freqIndex] + 7);  // Set the variated chorus-wave
       newOscs[oscIndex] = 1;
       oscIndex++;
     }
@@ -337,7 +338,7 @@ void updateControl() {
         //Serial.print("The chip index:  ");
         //Serial.println(chipIndex);
         masterTouchData[chipIndex] = finaliseTouchRequest();
-        Serial.println(masterTouchData[chipIndex], BIN);
+        // Serial.println(masterTouchData[chipIndex], BIN);
         //masterTouchData[chipIndex] = conditionTouchData(masterTouchData[chipIndex], chipIndex); // this is WAY too slow now.  SIgh.  
         //Serial.println(masterTouchData[chipIndex], BIN);
         chipIndex = chipIndex + 0x01;
@@ -361,6 +362,7 @@ int updateAudio(){
   for (int i = 0; i < NUMBER_OSCS; i++) {
     if (newOscs[i] != 0) {
       asig = asig + oscs[i]->next();
+      asig = asig + oscs[i + NUMBER_OSCS]->next();
     }
   }
   //  >> 3 works for 1-3 oscs.  Will need to solve this later
