@@ -1,4 +1,4 @@
-#N canvas 65 54 1301 714 10;
+#N canvas 66 82 1301 714 10;
 #X declare -lib mrpeach;
 #N canvas 0 0 471 666 synth1 0;
 #X obj 163 577 *~ 0.2;
@@ -1281,7 +1281,7 @@
 #X obj 101 101 cnv 15 300 120 empty empty FILTER 8 12 1 14 -62784 -262144
 0;
 #X obj 322 256 vsl 12 60 0 0.3 0 0 empty empty L 0 -8 1 8 -262144 -1
--262144 0 1;
+-262144 1900 1;
 #X obj 285 133 vsl 12 60 0 2000 0 0 empty empty LEV 0 -8 1 8 -262144
 -1 -262144 0 1;
 #X obj 116 133 vsl 12 60 0 2000 0 1 empty empty A 0 -8 1 8 -262144
@@ -1289,15 +1289,15 @@
 #X obj 156 133 vsl 12 60 0 2000 0 1 empty empty D 0 -8 1 8 -262144
 -1 -262144 2100 1;
 #X obj 246 133 vsl 12 60 0 3000 0 0 empty empty AMT 0 -8 1 8 -262144
--1 -262144 0 1;
+-1 -262144 1900 1;
 #X obj 157 255 vsl 12 60 0 1 0 0 empty empty FAT 0 -8 1 8 -262144 -1
--262144 0 1;
+-262144 2800 1;
 #X obj 324 133 vsl 12 60 0.5 6 0 0 empty empty RES 0 -8 1 8 -262144
--33289 -262144 0 1;
+-33289 -262144 1800 1;
 #X obj 244 256 vsl 12 60 0 2000 0 1 empty empty A 0 -8 1 8 -262144
--1 -262144 900 1;
+-1 -262144 1400 1;
 #X obj 283 256 vsl 12 60 0 2000 0 1 empty empty D 0 -8 1 8 -262144
--1 -262144 300 1;
+-1 -262144 2200 1;
 #X obj 53 389 s \$0-oscf;
 #X obj 130 390 s \$0-oscfat;
 #X obj 54 360 s \$0-fenva;
@@ -1309,27 +1309,27 @@
 #X obj 218 360 s \$0-frng;
 #X obj 298 359 s \$0-frle;
 #X obj 322 324 nbx 3 14 -1e+37 1e+37 0 0 empty empty empty 0 -6 0 10
--260818 -1 -1 0 256;
+-260818 -1 -1 0.0966102 256;
 #X obj 283 324 nbx 3 14 -1e+37 1e+37 0 0 empty empty empty 0 -6 0 10
--260818 -1 -1 101.695 256;
+-260818 -1 -1 745.763 256;
 #X obj 244 324 nbx 3 14 -1e+37 1e+37 0 0 empty empty empty 0 -6 0 10
--260818 -1 -1 305.085 256;
+-260818 -1 -1 474.576 256;
 #X obj 157 321 nbx 3 14 -1e+37 1e+37 0 0 empty empty empty 0 -6 0 10
--258699 -262144 -1 0 256;
+-258699 -262144 -1 0.474576 256;
 #X obj 112 322 nbx 3 14 -1e+37 1e+37 0 0 empty empty empty 0 -6 0 10
--258699 -262144 -1 0 256;
+-258699 -262144 -1 1 256;
 #X obj 324 203 nbx 3 14 -1e+37 1e+37 0 0 empty empty empty 0 -6 0 10
--62784 -262144 -1 0 256;
+-62784 -262144 -1 2.17797 256;
 #X obj 285 203 nbx 3 14 -1e+37 1e+37 0 0 empty empty empty 0 -6 0 10
 -62784 -262144 -1 0 256;
 #X obj 246 203 nbx 3 14 -1e+37 1e+37 0 0 empty empty empty 0 -6 0 10
--62784 -262144 -1 0 256;
+-62784 -262144 -1 966.102 256;
 #X obj 156 203 nbx 3 14 -1e+37 1e+37 0 0 empty empty empty 0 -6 0 10
 -62784 -262144 -1 711.864 256;
 #X obj 116 203 nbx 3 14 -1e+37 1e+37 0 0 empty empty empty 0 -6 0 10
 -62784 -262144 -1 1661.02 256;
 #X obj 112 254 vradio 12 1 0 5 empty empty OCT 0 -6 1 8 -262144 -1
--262144 0;
+-262144 1;
 #X connect 3 0 18 0;
 #X connect 3 0 22 0;
 #X connect 4 0 21 0;
@@ -1666,11 +1666,11 @@
 #X connect 29 0 27 0;
 #X connect 29 1 27 1;
 #X restore 929 246 pd synth1;
-#X text 34 388;
-#X text 34 67;
-#X text 143 37;
+#X text 34 388 comment;
 #X text 34 13 Synth via: http://www.obiwannabe.co.uk/html/music/6SS/six-simple-synthesisers.html
 ;
+#X text 143 37;
+#X text 34 67;
 #X connect 0 0 1 0;
 #X connect 0 0 1 1;
 #X connect 4 0 5 0;
